@@ -5,25 +5,6 @@
  */
 
 ; (function (window, document) {
-    var debug = true;
-
-    // Check to make sure jQuery is loaded
-    if (typeof jQuery === "undefined") {
-        throw new Error("Flash's JavaScript requires jQuery");
-    }
-
-    /**
-     * Self executing method to verify a valid jQuery version is loaded, otherwise, throw error
-     * @param {Object} $ - The jQuery object
-     */
-    (function ($) {
-        var version = $.fn.jquery.split(".");
-
-        if ((version[0] < 2 && version[1] < 11) || (version[0] === 1 && version[1] === 11 && version[2] < 2)) {
-            throw new Error("Flash's JavaScript requires jQuery version 1.11.2 or higher");
-        }
-    })(jQuery);
-
     (function (factory) {
         // Support three module loading scenarios
         if (typeof window.define === "function" && window.define["amd"]) {
@@ -86,147 +67,6 @@
         // #endregion Objects
 
         // #region Methods
-
-        // #region log
-
-            /**
-             * Private self executing function containing the logging functions
-             */
-            log = (function () {
-                var self = {};
-
-                // Check to ensure console does not throw errors during logging if it is not defined
-                if (typeof console === "undefined") {
-                    window.console = {
-                        error: function () { },
-                        info: function () { },
-                        log: function () { },
-                        warn: function () { }
-                    };
-                }
-
-                // #region Private
-
-                // #region Methods
-
-                // #region buildMessage
-
-                /**
-                 * Concatinate the log message using the type, message and location of the calling function
-                 * @param {String} type - The type of message to log
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 * @returns {String} The concatinated log message to log to the console
-                 */
-                function buildMessage(type, message, location) {
-                    return type + ": " + (location ? "at " + location + " - " : "") + message;
-                }
-
-                // #endregion buildMessage
-
-                // #endregion Methods
-
-                // #endregion Private
-
-                // #region Public
-
-                // #region Methods
-
-                // #region default
-
-                /**
-                 * Log the message to the console
-                 * @param {(Object|String)} obj
-                 */
-                self.default = function (obj) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        console.log(obj);
-                    }
-                };
-
-                // #endregion default
-
-                // #region depreciated
-
-                /**
-                 * Log the depreciated type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.depreciated = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("DEPRECIATED", message, location);
-
-                        console.log(builtMessage);
-                    }
-                };
-
-                // #endregion depreciated
-
-                // #region error
-
-                /**
-                 * Log the error type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.error = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("ERROR", message, location);
-
-                        console.error(builtMessage);
-                    }
-                };
-
-                // #endregion error
-
-                // #region info
-
-                /**
-                 * Log the info type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.info = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("INFO", message, location);
-
-                        console.info(builtMessage);
-                    }
-                };
-
-                // #endregion info
-
-                // #region warning
-
-                /**
-                 * Log the warning type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.warning = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("WARNING", message, location);
-
-                        console.warn(builtMessage);
-                    }
-                }
-
-                // #endregion warning
-
-                // #endregion Methods
-
-                // #endregion Public
-
-                return self;
-            })(),
-
-        // #endregion log
 
         // #region object
 
@@ -714,13 +554,9 @@
                 function loadTemplate(hash, params, url, title, prefix, type, callback) {
                     var template = getTemplate(hash);
 
-                    log.info(hash, "templating.loadTemplate");
-
                     if (template) {
                         template.init(params);
                     } else {
-                        log.info("new " + hash, "templating.loadTemplate");
-
                         template = type === templateTypes.PAGE
                             ? getPageTemplate(hash, prefix, title, callback)
                             : getModalTemplate(hash, prefix, callback);
@@ -881,10 +717,6 @@
 
                         window[template.controller].init(callback, params, $templateHtml);
                     } else {
-                        log.warning(
-                            "View for '" + template.hash + "' does not have a controller. By default, a view does not need a controller, therefore, ignore this warning if excluding a controller was intentional.",
-                            "templating.object.template.prototype.init");
-
                         template.display(template.html, params);
                     }
                 };
@@ -1205,8 +1037,6 @@
                         }
                     }
 
-                    log.error("Route path '" + path + "' is not properly formatted.", "routing.buildHash");
-
                     return null;
                 }
 
@@ -1267,8 +1097,6 @@
                             continue;
                         }
 
-                        log.info(route.hash, "routing.regexMatch");
-
                         var map,
                             params = routeHash.match(regExp);
 
@@ -1281,10 +1109,6 @@
 
                             for (var j = 0; j < route.params.length; j++) {
                                 if (!route.params[j] || !params[j]) {
-                                    log.error(
-                                        "Named parameters did not match properly based on route. Please verify the route definition.",
-                                        "routing.regexMatch");
-
                                     break;
                                 }
 
@@ -1511,7 +1335,7 @@
         /**
          * @returns {String} The flash version
          */
-        Object.defineProperty(flash, "version", { get: function () { return "1.0.0"; } });
+        Object.defineProperty(flash, "version", { get: function () { return "1.0.1"; } });
 
         // #endregion version
 
@@ -1979,8 +1803,6 @@
                         }
                     }
                 } catch (e) {
-                    log.error(e, "flash.http.displayFormErrors");
-
                     flash.alert.dangerDefault();
                 }
             }
@@ -2016,8 +1838,6 @@
                             flash.utils.displayErrorPage(application.resources.errorMessages.DEFAULT);
                     }
                 } catch (e) {
-                    log.error(e, "flash.http.triggerRedirect");
-
                     flash.alert.dangerDefault();
                 }
             }
@@ -2047,15 +1867,11 @@
                     async: false
                 })
                     .done(function (data, textStatus, jqXhr) {
-                        log.info("Status: " + textStatus, "flash.http.get");
-
                         if (flash.utils.object.isFunction(callback)) {
                             callback(data);
                         }
                     })
                     .fail(function (jqXhr, textStatus, errorThrown) {
-                        log.error("Status: " + textStatus + ", Error: " + errorThrown, "flash.http.get");
-
                         // Handle the error based on the returned status code
                         if (jqXhr.status === statusCodes.REDIRECT) {
                             triggerRedirect(jqXhr.responseText, verbs.GET);
@@ -2101,12 +1917,7 @@
              */
             self.getScript = function (url, callback) {
                 $.getScript(url)
-                    .fail(function (jqXhr, settings, exception) {
-                        log.error("Failed to download '" + url + "', Exception: " + exception, "flash.http.getScript");
-                    })
                     .always(function (jqXhr, textStatus) {
-                        log.info("Status: " + textStatus, "flash.http.getScript");
-
                         if (flash.utils.object.isFunction(callback)) {
                             callback();
                         }
@@ -2129,8 +1940,6 @@
 
                 $.post(url, obj)
                     .done(function (data, textStatus, jqXhr) {
-                        log.info("Status: " + textStatus, "flash.http.post");
-
                         // Reset the alerts and validation before handling the success 
                         flash.alert.reset();
                         flash.utils.resetValidation(elementSelector);
@@ -2140,8 +1949,6 @@
                         }
                     })
                     .fail(function (jqXhr, textStatus, errorThrown) {
-                        log.error("Status: " + textStatus + ", Error: " + errorThrown, "flash.http.post");
-
                         // Reset the alerts and validation before handling the error 
                         flash.alert.reset();
                         flash.utils.resetValidation(elementSelector);
@@ -2166,8 +1973,6 @@
                         }
                     })
                     .always(function (jqXhr, textStatus) {
-                        log.info("Status: " + textStatus, "flash.http.post");
-
                         if (jqXhr.status !== statusCodes.REDIRECT && jqXhr.status !== statusCodes.FORBIDDEN) {
                             flash.utils.toggleSubmitButton(elementSelector);
                         }
@@ -2391,30 +2196,22 @@
              */
             self.addHelpBlock = function (elementSelector, key, value) {
                 if (!elementSelector) {
-                    log.error("Element selector is null or undefined.", "flash.utils.addHelpBlock");
-
                     return;
                 }
 
                 if (!key) {
-                    log.error("Key is null or undefined.", "flash.utils.addHelpBlock");
-
                     return;
                 }
 
                 var $formElement = $(elementSelector).find(hashtag + key);
 
                 if (!$formElement) {
-                    log.error("Form element object is null or undefined.", "flash.utils.addHelpBlock");
-
                     return;
                 }
 
                 var $formGroupElement = $formElement.closest(".form-group");
 
                 if (!$formGroupElement.length) {
-                    log.error("Form group element object is null or undefined.", "flash.utils.addHelpBlock");
-
                     return;
                 }
 
@@ -2436,15 +2233,7 @@
              * @param {Number} elementsPerGroup - The number of elements per group
              */
             self.applyRowGrouping = function ($elements, elementsPerGroup) {
-                if (!$elements.length) {
-                    log.warning("Elements object is null or undefined", "flash.utils.applyRowGrouping");
-
-                    return;
-                }
-
-                if (!self.object.isNumber(elementsPerGroup)) {
-                    log.error("Elements per group is null or undefined", "flash.utils.applyRowGrouping");
-
+                if (!$elements.length || !self.object.isNumber(elementsPerGroup)) {
                     return;
                 }
 
@@ -2465,14 +2254,10 @@
              */
             self.bindSubmitEvent = function (elementSelector, url, callback) {
                 if (!elementSelector) {
-                    log.error("Element selector is null or undefined.", "flash.utils.bindSubmitEvent");
-
                     return;
                 }
 
                 if (!url) {
-                    log.error("URL is null or undefined.", "flash.utils.bindSubmitEvent");
-
                     return;
                 }
 
@@ -2548,8 +2333,6 @@
              */
             self.convertObjectToQueryStringParamArray = function (obj) {
                 if (!self.object.isObject(obj)) {
-                    log.error("Object is null or undefined.", "flash.utils.convertObjectToQueryStringParamArray");
-
                     return null;
                 }
 
@@ -2597,8 +2380,6 @@
              */
             self.getQueryString = function (params) {
                 if (!params) {
-                    log.error("Params are null or undefined.", "flash.utils.getQueryString");
-
                     return null;
                 }
 
@@ -2636,8 +2417,6 @@
              */
             self.getSelectSelectedValues = function (elementSelector) {
                 if (!elementSelector) {
-                    log.error("Element selector is null or undefined.", "flash.utils.getSelectSelectedValues");
-
                     return null;
                 }
 
@@ -2703,8 +2482,6 @@
              */
             self.removeHelpBlock = function (elementSelector) {
                 if (!elementSelector) {
-                    log.error("Element selector is null or undefined.", "flash.utils.removeHelpBlock");
-
                     return;
                 }
 
@@ -2722,8 +2499,6 @@
              */
             self.resetForm = function (elementSelector) {
                 if (!elementSelector) {
-                    log.error("Element selector is null or undefined.", "flash.utils.resetForm");
-
                     return;
                 }
 
@@ -2742,8 +2517,6 @@
              */
             self.resetValidation = function (elementSelector) {
                 if (!elementSelector) {
-                    log.error("Element selector is null or undefined.", "flash.utils.resetValidation");
-
                     return;
                 }
 
@@ -2814,8 +2587,6 @@
                 }
 
                 if (!$button.length) {
-                    log.error("Button object is null or undefined.", "flash.utils.toggleButton");
-
                     return;
                 }
 
@@ -2855,8 +2626,6 @@
              */
             self.toggleSubmitButton = function (elementSelector) {
                 if (!elementSelector) {
-                    log.error("Element selector is null or undefined.", "flash.utils.resetValidation");
-
                     return;
                 }
 
