@@ -89,7 +89,7 @@
                  * @returns {String} The concatinated object name
                  */
                 function buildObjectName(prefix, suffix) {
-                    return prefix + (suffix || "");
+                    return prefix ? prefix + (suffix || "") : null;
                 }
 
                 // #endregion buildObjectName
