@@ -1,5 +1,5 @@
 ﻿/*!
- * Flash JavaScript Library v1.0.0 (http://flashjs.org)
+ * Flash JavaScript Library v1.0.2 (http://flashjs.org)
  * Copyright 2015 IRDS, Inc.
  * License: MIT (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -806,12 +806,19 @@
                 self.unloadTemplate = function (hash, params) {
                     var template = getTemplate(hash);
 
+                    if (!template) {
+                        log.warning(
+                            "Template was not found for route hash '" + hash + "', therefore, unload was skipped.",
+                            "templating.unloadTemplate");
+
+                        return;
+                    }
+
                     if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
                         application.settings.beforeUnload(template.type, params);
                     }
 
-                    if (template &&
-                        template.controller &&
+                    if (template.controller &&
                         window[template.controller] &&
                         flash.utils.object.isFunction(window[template.controller].unload)) {
                         window[template.controller].unload(params);
@@ -1511,7 +1518,7 @@
         /**
          * @returns {String} The flash version
          */
-        Object.defineProperty(flash, "version", { get: function () { return "1.0.1"; } });
+        Object.defineProperty(flash, "version", { get: function () { return "1.0.2"; } });
 
         // #endregion version
 
@@ -1926,6 +1933,7 @@
                 statusCodes = {
                     BADREQUEST: 400,
                     FORBIDDEN: 403,
+                    NOTFOUND: 404,
                     REDIRECT: 302,
                     UNAUTHORIZED: 401
                 },
@@ -2063,6 +2071,8 @@
                             flash.utils.displayErrorPage(application.resources.errorMessages.UNAUTHORIZED);
                         } else if (jqXhr.status === statusCodes.FORBIDDEN) {
                             flash.utils.displayErrorPage(application.resources.errorMessages.FORBIDDEN);
+                        } else if (jqXhr.status === statusCodes.NOTFOUND) {
+                            flash.utils.displayErrorPage(application.resources.errorMessages.NOTFOUND);
                         } else {
                             flash.utils.displayErrorPage(application.resources.errorMessages.DEFAULT);
                         }
@@ -2155,6 +2165,8 @@
                             flash.alert.danger(application.resources.errorMessages.UNAUTHORIZED);
                         } else if (jqXhr.status === statusCodes.FORBIDDEN) {
                             flash.utils.displayErrorPage(application.resources.errorMessages.FORBIDDEN);
+                        } else if (jqXhr.status === statusCodes.NOTFOUND) {
+                            flash.utils.displayErrorPage(application.resources.errorMessages.NOTFOUND);
                         } else {
                             flash.alert.dangerDefault();
                         }
