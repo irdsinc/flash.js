@@ -6,6 +6,6 @@ In today's fast-paced world, productivity is what measures success. Don't waste 
 
 FlashJS was designed with extensibility in mind. It works well with other libraries, such as KnockoutJS, which can be used for data-binding dynamic content to the view through the controller and adding a way to automatically update the view when the model changes as well as update the model when the view changes.
 
-* Website: http://flashjs.org
+* Website: http://flashjs.org/#/
 * Examples: http://flashjs.org/#/examples
 * API Docs: http://flashjs.org/#/docs/api
