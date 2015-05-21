@@ -1,5 +1,5 @@
 ﻿/*!
- * Flash JavaScript Library v1.0.2 (http://flashjs.org)
+ * Flash JavaScript Library v1.0.3 (http://flashjs.org)
  * Copyright 2015 IRDS, Inc.
  * License: MIT (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -535,24 +535,14 @@
                 // #region setActiveTab
 
                 /**
-                 * Set the application active tab and update the HTML of the template with the active tab
+                 * Set the application active tab and update the view with the active tab
                  * @param {String} tab - The active tab object name
-                 * @param {String} html - The HTML string of the template to be loaded
-                 * @returns {String} The updated HTML string containing the active tab css
                  */
-                function setActiveTab(tab, html) {
+                function setActiveTab(tab) {
                     application.activeTab = tab;
 
-                    if (!html) {
-                        return null;
-                    }
-
-                    var $html = convertHtmlStringToJqueryObject(html);
-
-                    $html.find("[tab-name]").removeClass(activeClassName);
-                    $html.find("[tab-name='" + tab + "']").addClass(activeClassName);
-
-                    return $html.html();
+                    $("[tab-name]").removeClass(activeClassName);
+                    $("[tab-name='" + tab + "']").addClass(activeClassName);
                 }
 
                 // #endregion setActiveTab
@@ -618,12 +608,12 @@
                  * @param {Object} params - The object containing the parameters
                  */
                 function displayPageTemplate(template, preparedHtml, params) {
-                    var tabHtml = setActiveTab(template.tab, preparedHtml);
-
                     self.setDocumentTitle(template.title);
 
-                    // If a tab was set to active, use the tab HTML string, otherwise, use the prepared HTML string
-                    flash.$templateContainerElement.html(tabHtml || preparedHtml);
+                    // Set the view to the prepared HTML string
+                    flash.$templateContainerElement.html(preparedHtml);
+
+                    setActiveTab(template.tab);
 
                     flash.utils.scrollTo(flash.$parentElement, flash.$templateContainerElement);
 
@@ -1518,7 +1508,7 @@
         /**
          * @returns {String} The flash version
          */
-        Object.defineProperty(flash, "version", { get: function () { return "1.0.2"; } });
+        Object.defineProperty(flash, "version", { get: function () { return "1.0.3"; } });
 
         // #endregion version
 
@@ -1761,7 +1751,7 @@
 
             /**
              * Get the element selector by the supplied type, if it is supplied
-             * @param {String} type - The type of the status message to check visiblity
+             * @param {String} type - The type of the status message to check visibility
              * @returns {String} The alert selector
              */
             function getSelectorByType(type) {
@@ -1850,7 +1840,7 @@
 
             /**
              * Check if any, or suppled type, alerts exist that are not static
-             * @param {String} type - The type of the status message to check visiblity
+             * @param {String} type - The type of the status message to check visibility
              * @returns {Boolean} Is an alert of the supplied type visible
              */
             self.isVisible = function (type) {
@@ -1867,7 +1857,7 @@
 
             /**
              * Remove all, or supplied type, alerts that are not static
-             * @param {String} type - The type of the status message to check visiblity
+             * @param {String} type - The type of the status message to reset
              */
             self.reset = function (type) {
                 // Get the element selector for the supplied type
