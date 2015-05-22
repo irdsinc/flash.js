@@ -1,5 +1,5 @@
 ﻿/*!
- * Flash JavaScript Library v1.0.3 (http://flashjs.org)
+ * Flash JavaScript Library v1.0.4 (http://flashjs.org)
  * Copyright 2015 IRDS, Inc.
  * License: MIT (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -1016,6 +1016,12 @@
 
                 // #endregion escapedRegexQueryIdentifier
 
+                // #region hashPrefix
+
+                    hashPrefix = "#/",
+
+                // #endregion hashPrefix
+
                 // #region namedParameterIdentifier
 
                     namedParameterIdentifier = "{",
@@ -1175,8 +1181,6 @@
                 function buildHash(path) {
                     // Ensure the path is a string
                     if (flash.utils.object.isString(path)) {
-                        var hashPrefix = "#/";
-
                         // Return the path if the hashtag/slash prefix exists
                         if (path.indexOf(hashPrefix) === 0) {
                             return path;
@@ -1454,8 +1458,13 @@
                  * Listener to be executed when hashchange event is fired
                  */
                 self.listener = function () {
-                    var routeHash = window.location.hash,
-                        routeHashLower = toLowerCase(routeHash);
+                    var routeHash = window.location.hash;
+
+                    if (!routeHash) {
+                        routeHash = hashPrefix;
+                    }
+
+                    var routeHashLower = toLowerCase(routeHash);
 
                     // Check if the hash hasn't changed and do nothing
                     if (routeHash === previousRouteHash || routeHashLower === previousRouteHash) {
@@ -1508,7 +1517,7 @@
         /**
          * @returns {String} The flash version
          */
-        Object.defineProperty(flash, "version", { get: function () { return "1.0.3"; } });
+        Object.defineProperty(flash, "version", { get: function () { return "1.0.4"; } });
 
         // #endregion version
 
@@ -1660,11 +1669,6 @@
 
             // Execute the listener based on the current hash
             routing.listener();
-
-            // Ensure the application has a hash, if not, redirect to the index
-            if (!window.location.hash) {
-                routing.redirect("/");
-            }
         };
 
         // #endregion run
