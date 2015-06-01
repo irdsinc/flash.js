@@ -1,4 +1,4 @@
-# flash.js
+# FlashJS
 
 FlashJS is a lightweight web framework built on JavaScript and designed to simplify application development. It is based on a view-controller design concept, where the controller handles custom behavior, such as binding events to DOM elements, to manage changes within its associated view.
 
