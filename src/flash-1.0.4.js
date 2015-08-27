@@ -575,6 +575,17 @@
 
                 // #region Methods
 
+                // #region clear
+
+                /**
+                 * Clear the client browser session templates
+                 */
+                self.clear = function () {
+                    templates = [];
+                };
+
+                // #endregion clear
+
                 // #region loadModalTemplate
 
                 /**
@@ -1160,7 +1171,7 @@
 
                                 previousRouteHash = routeHashLower;
                             } else {
-                                flash.utils.displayErrorPage(application.resources.errorMessages.NOTFOUND);
+                                flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
                             }
                         }
                     }
@@ -1639,7 +1650,7 @@
             self.dangerDefault = function (parentElementSelector, targetElementSelector) {
                 create(
                     types.DANGER,
-                    application.resources.errorMessages.DEFAULT,
+                    flash.resources.errorMessages.DEFAULT,
                     parentElementSelector,
                     targetElementSelector);
             };
@@ -1833,7 +1844,7 @@
                         case verbs.PUT:
                             flash.alert.dangerDefault();
                         default:
-                            flash.utils.displayErrorPage(application.resources.errorMessages.DEFAULT);
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
                     }
                 } catch (e) {
                     flash.alert.dangerDefault();
@@ -1874,13 +1885,13 @@
                         if (jqXhr.status === statusCodes.REDIRECT) {
                             triggerRedirect(jqXhr.responseText, verbs.GET);
                         } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
-                            flash.utils.displayErrorPage(application.resources.errorMessages.UNAUTHORIZED);
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.UNAUTHORIZED);
                         } else if (jqXhr.status === statusCodes.FORBIDDEN) {
-                            flash.utils.displayErrorPage(application.resources.errorMessages.FORBIDDEN);
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.FORBIDDEN);
                         } else if (jqXhr.status === statusCodes.NOTFOUND) {
-                            flash.utils.displayErrorPage(application.resources.errorMessages.NOTFOUND);
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
                         } else {
-                            flash.utils.displayErrorPage(application.resources.errorMessages.DEFAULT);
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
                         }
 
                         flash.utils.clearTemplates();
@@ -1959,11 +1970,11 @@
                         } else if (jqXhr.status === statusCodes.BADREQUEST) {
                             displayFormErrors(elementSelector, jqXhr.responseText);
                         } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
-                            flash.alert.danger(application.resources.errorMessages.UNAUTHORIZED);
+                            flash.alert.danger(flash.resources.errorMessages.UNAUTHORIZED);
                         } else if (jqXhr.status === statusCodes.FORBIDDEN) {
-                            flash.utils.displayErrorPage(application.resources.errorMessages.FORBIDDEN);
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.FORBIDDEN);
                         } else if (jqXhr.status === statusCodes.NOTFOUND) {
-                            flash.utils.displayErrorPage(application.resources.errorMessages.NOTFOUND);
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
                         } else {
                             flash.alert.dangerDefault();
                         }
@@ -2312,7 +2323,7 @@
              * Clear the client browser session templates
              */
             self.clearTemplates = function () {
-                application.templates = [];
+                templating.clear();
             };
 
             // #endregion clearTemplates
