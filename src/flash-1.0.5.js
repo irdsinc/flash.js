@@ -1,5 +1,5 @@
 ﻿/*!
- * Flash JavaScript Library v1.0.4 (http://flashjs.org)
+ * Flash JavaScript Library v1.0.5 (http://flashjs.org)
  * Copyright 2015 IRDS, Inc.
  * License: MIT (http://www.opensource.org/licenses/mit-license.php)
  */
@@ -1348,7 +1348,7 @@
         /**
          * @returns {String} The flash version
          */
-        Object.defineProperty(flash, "version", { get: function () { return "1.0.4"; } });
+        Object.defineProperty(flash, "version", { get: function () { return "1.0.5"; } });
 
         // #endregion version
 
