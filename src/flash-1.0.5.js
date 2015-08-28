@@ -1297,11 +1297,6 @@
 
                     var routeHashLower = toLowerCase(routeHash);
 
-                    // Check if the hash hasn't changed and do nothing
-                    if (routeHash === previousRouteHash || routeHashLower === previousRouteHash) {
-                        return;
-                    }
-
                     runOnUnload(previousRouteHash);
                     runOnLoad(routeHash, routeHashLower);
                 };
