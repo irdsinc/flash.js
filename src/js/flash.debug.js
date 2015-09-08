@@ -2516,7 +2516,7 @@
                     return;
                 }
 
-                $(document).on("submit", elementSelector, function () {
+                $(elementSelector).submit(function () {
                     flash.http.post(
                         this,
                         url,
