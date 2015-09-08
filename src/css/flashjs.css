@@ -1,0 +1,31 @@
+﻿.btn-loading {
+    background-image: url(images/icons/loading.gif);
+    background-origin: content-box;
+    background-position: 50% center;
+    background-repeat: no-repeat;
+    overflow: hidden;
+    text-indent: -9999px;
+}
+
+.page-loading {
+    left: 0;
+    position: fixed;
+    right: 0;
+    text-align: center;
+    top: 0;
+    z-index: 2030;
+}
+
+    .page-loading span {
+        background: #f9edbe;
+        border: 1px solid #f0c36d;
+        -webkit-box-shadow: 0 2px 4px #000000;
+        -webkit-box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 4px #000000;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        color: #333333;
+        display: inline-block;
+        font-size: 14px;
+        font-weight: bold;
+        padding: 4px 10px;
+    }
