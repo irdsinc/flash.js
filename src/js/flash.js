@@ -51,6 +51,7 @@
                     disableSpanInLabelDefaultAction: true,
                     documentParentElementSelector: "html, body",
                     errorPath: "#/error",
+                    googleAnalyticsTrackingCode: null,
                     messagePath: "#/message",
                     modalParentElementSelector: ".modal",
                     pageLoadingClassName: "page-loading",
@@ -335,6 +336,9 @@
                     if (flash.utils.object.isFunction(application.settings.afterLoad)) {
                         application.settings.afterLoad(type, params);
                     }
+
+                    // Send google analytics page view data
+                    tracking.sendGoogleAnalyticsPageView();
 
                     // Enable all disabled buttons in the current template
                     flash.$parentElement.find(buttonSelector).attr("disabled", false);
@@ -864,6 +868,66 @@
             })(),
 
         // #endregion templating
+
+        // #region tracking
+
+        /**
+         * Private self executing function containing the tracking functions
+         */
+        tracking = (function () {
+            var self = {};
+
+            // #region Public
+
+            // #region Methods
+
+            // #region loadGoogleAnalytics
+
+            /**
+             * Load google analytics libraries
+             */
+            self.loadGoogleAnalytics = function () {
+                // Only load google analytics if tracking code was supplied
+                if (!flash.utils.object.isString(application.settings.googleAnalyticsTrackingCode)) {
+                    return;
+                }
+
+                (function (i, s, o, g, r, a, m) {
+                    i["GoogleAnalyticsObject"] = r; i[r] = i[r] || function () {
+                        (i[r].q = i[r].q || []).push(arguments);
+                    }, i[r].l = 1 * new Date(); a = s.createElement(o),
+                    m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m);
+                })(window, document, "script", "//www.google-analytics.com/analytics.js", "ga");
+
+                ga("create", application.settings.googleAnalyticsTrackingCode, "auto");
+            };
+
+            // #endregion loadGoogleAnalytics
+
+            // #region sendGoogleAnalyticsPageView
+
+            /**
+             * Send google analytics page view data
+             */
+            self.sendGoogleAnalyticsPageView = function () {
+                // Only send google analytics page view data if tracking code was supplied
+                if (!flash.utils.object.isString(application.settings.googleAnalyticsTrackingCode)) {
+                    return;
+                }
+
+                ga("send", "pageview", window.location.pathname + window.location.search + window.location.hash);
+            };
+
+            // #endregion sendGoogleAnalyticsPageView
+
+            // #endregion Methods
+
+            // #endregion Public
+
+            return self;
+        })(),
+
+        // #endregion tracking
 
         // #region routing
 
@@ -1514,6 +1578,9 @@
                         unauthorizedRedirectPath);
                 }
             });
+
+            // Load google analytics tracking libraries
+            tracking.loadGoogleAnalytics();
 
             // Remove the noscript element if one exists to reduce size of DOM
             $("noscript").remove();
