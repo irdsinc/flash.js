@@ -394,7 +394,7 @@
                     application.activeTab = tab;
 
                     $("[tab-name]").removeClass(activeClassName);
-                    $("[tab-name='" + tab + "']").addClass(activeClassName);
+                    $("[tab-name*='" + tab + "']").addClass(activeClassName);
                 }
 
                 // #endregion setActiveTab
