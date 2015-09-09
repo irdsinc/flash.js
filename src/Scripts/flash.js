@@ -369,12 +369,7 @@
 
                 // Check to make sure to page loading is active
                 if (application.settings.showPageLoading) {
-                    var $loading = $("." + application.settings.pageLoadingClassName);
-
-                    // Hide the page loading element if it exists
-                    if ($loading.length) {
-                        $loading.remove();
-                    }
+                    self.removePageLoading();
                 }
             }
 
@@ -451,6 +446,11 @@
                     }
 
                     runAfterUnload(template.type, params);
+
+                    // Check to make sure to page loading is active
+                    if (application.settings.showPageLoading) {
+                        self.removePageLoading();
+                    }
 
                     // Unbind the shown/hidden events from the modal
                     $modal.off(modalShownEventName + "," + modalHiddenEventName);
@@ -609,6 +609,25 @@
 
             // #endregion clear
 
+            // #region displayPageLoading
+
+            /**
+             * Display the page loading element on the view
+             */
+            self.displayPageLoading = function () {
+                var $body = $("body"),
+                    $div = $("<div/>", {
+                        "class": application.settings.pageLoadingClassName
+                    });
+
+                $("<span/>").text("Loading...").appendTo($div);
+
+                // Add the page loading element to the body element
+                $body.prepend($div);
+            };
+
+            // #endregion displayPageLoading
+
             // #region loadModalTemplate
 
             /**
@@ -620,6 +639,11 @@
              * @param {Function} callback - The function that is executed when the template is loaded
              */
             self.loadModalTemplate = function (hash, url, prefix, params, callback) {
+                // Check to make sure to page loading is active
+                if (application.settings.showPageLoading) {
+                    self.displayPageLoading();
+                }
+
                 loadTemplate(hash, params, url, null, prefix, templateTypes.MODAL, callback);
             };
 
@@ -641,6 +665,22 @@
             };
 
             // #endregion loadPageTemplate
+
+            // #region removePageLoading
+
+            /**
+             * Remove the page loading element from the view
+             */
+            self.removePageLoading = function () {
+                var $loading = $("." + application.settings.pageLoadingClassName);
+
+                // Remove the page loading element if it exists
+                if ($loading.length) {
+                    $loading.remove();
+                }
+            };
+
+            // #endregion removePageLoading
 
             // #region setDocumentTitle
 
@@ -673,15 +713,7 @@
 
                 // Check to make sure to page loading is active
                 if (application.settings.showPageLoading) {
-                    var $body = $("body"),
-                        $div = $("<div/>", {
-                            "class": application.settings.pageLoadingClassName
-                        });
-
-                    $("<span/>").text("Loading...").appendTo($div);
-
-                    // Add the page loading element to the body element
-                    $body.prepend($div);
+                    self.displayPageLoading();
                 }
 
                 // Check if pre-defined before unload function is still a function and run it in case it was overloaded by user
@@ -2162,13 +2194,35 @@
 
             // #region Public
 
-            // #region Methods
+            // #region Objects
 
             // #region types
 
             self.types = templating.templateTypes;
 
             // #endregion types
+
+            // #endregion Objects
+
+            // #region Methods
+
+            // #region removePageLoading
+
+            /**
+             * Remove the page loading element from the view
+             */
+            self.removePageLoading = templating.removePageLoading;
+
+            // #endregion removePageLoading
+
+            // #region displayPageLoading
+
+            /**
+             * Display the page loading element on the view
+             */
+            self.displayPageLoading = templating.displayPageLoading;
+
+            // #endregion displayPageLoading
 
             // #endregion Methods
 
