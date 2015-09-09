@@ -54,6 +54,8 @@
                     googleAnalyticsTrackingCode: null,
                     messagePath: "#/message",
                     modalParentElementSelector: ".modal",
+                    modalHiddenEventName: "hidden.bs.modal",
+                    modalShownEventName: "shown.bs.modal",
                     pageLoadingClassName: "page-loading",
                     showButtonLoading: true,
                     showPageLoading: true,
@@ -277,18 +279,6 @@
 
             // #endregion loadedResources
 
-            // #region modalHiddenEventName
-
-                modalHiddenEventName = "hidden.bs.modal",
-
-            // #endregion modalHiddenEventName
-
-            // #region modalShowEventName
-
-                modalShownEventName = "shown.bs.modal",
-
-            // #endregion modalShowEventName
-
             // #region responseStatuses
 
                 responseStatuses = { ERROR: "Error", SUCCESS: "Success", WARNING: "Warning" },
@@ -423,7 +413,7 @@
                     $modal.modal("hide");
                 });
 
-                $modal.on(modalShownEventName, function () {
+                $modal.on(application.settings.modalShownEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
                         template.callback();
                     }
@@ -434,7 +424,7 @@
                     //$(".modal-dialog").resize(function () { });
                 });
 
-                $modal.on(modalHiddenEventName, function () {
+                $modal.on(application.settings.modalHiddenEventName, function () {
                     if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
                         application.settings.beforeUnload(template.type, params);
                     }
