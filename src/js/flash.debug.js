@@ -92,765 +92,518 @@
 
         // #region log
 
+        /**
+         * Private self executing function containing the logging functions
+         */
+        log = (function () {
+            var self = {};
+
+            // Check to ensure console does not throw errors during logging if it is not defined
+            if (typeof console === "undefined") {
+                window.console = {
+                    error: function () { },
+                    info: function () { },
+                    log: function () { },
+                    warn: function () { }
+                };
+            }
+
+            // #region Private
+
+            // #region Methods
+
+            // #region buildMessage
+
             /**
-             * Private self executing function containing the logging functions
+             * Concatinate the log message using the type, message and location of the calling function
+             * @param {String} type - The type of message to log
+             * @param {String} message - The message to log
+             * @param {String} location - The namespace location of the calling function
+             * @returns {String} The concatinated log message to log to the console
              */
-            log = (function () {
-                var self = {};
+            function buildMessage(type, message, location) {
+                return type + ": " + (location ? "at " + location + " - " : "") + message;
+            }
 
-                // Check to ensure console does not throw errors during logging if it is not defined
-                if (typeof console === "undefined") {
-                    window.console = {
-                        error: function () { },
-                        info: function () { },
-                        log: function () { },
-                        warn: function () { }
-                    };
+            // #endregion buildMessage
+
+            // #endregion Methods
+
+            // #endregion Private
+
+            // #region Public
+
+            // #region Methods
+
+            // #region default
+
+            /**
+             * Log the message to the console
+             * @param {(Object|String)} obj
+             */
+            self.default = function (obj) {
+                // Log only if in debug mode
+                if (debug) {
+                    console.log(obj);
                 }
+            };
 
-                // #region Private
+            // #endregion default
 
-                // #region Methods
+            // #region depreciated
 
-                // #region buildMessage
+            /**
+             * Log the depreciated type message
+             * @param {String} message - The message to log
+             * @param {String} location - The namespace location of the calling function
+             */
+            self.depreciated = function (message, location) {
+                // Log only if in debug mode
+                if (debug) {
+                    var builtMessage = buildMessage("DEPRECIATED", message, location);
 
-                /**
-                 * Concatinate the log message using the type, message and location of the calling function
-                 * @param {String} type - The type of message to log
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 * @returns {String} The concatinated log message to log to the console
-                 */
-                function buildMessage(type, message, location) {
-                    return type + ": " + (location ? "at " + location + " - " : "") + message;
+                    console.log(builtMessage);
                 }
+            };
 
-                // #endregion buildMessage
+            // #endregion depreciated
 
-                // #endregion Methods
+            // #region error
 
-                // #endregion Private
+            /**
+             * Log the error type message
+             * @param {String} message - The message to log
+             * @param {String} location - The namespace location of the calling function
+             */
+            self.error = function (message, location) {
+                // Log only if in debug mode
+                if (debug) {
+                    var builtMessage = buildMessage("ERROR", message, location);
 
-                // #region Public
-
-                // #region Methods
-
-                // #region default
-
-                /**
-                 * Log the message to the console
-                 * @param {(Object|String)} obj
-                 */
-                self.default = function (obj) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        console.log(obj);
-                    }
-                };
-
-                // #endregion default
-
-                // #region depreciated
-
-                /**
-                 * Log the depreciated type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.depreciated = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("DEPRECIATED", message, location);
-
-                        console.log(builtMessage);
-                    }
-                };
-
-                // #endregion depreciated
-
-                // #region error
-
-                /**
-                 * Log the error type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.error = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("ERROR", message, location);
-
-                        console.error(builtMessage);
-                    }
-                };
-
-                // #endregion error
-
-                // #region info
-
-                /**
-                 * Log the info type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.info = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("INFO", message, location);
-
-                        console.info(builtMessage);
-                    }
-                };
-
-                // #endregion info
-
-                // #region warning
-
-                /**
-                 * Log the warning type message
-                 * @param {String} message - The message to log
-                 * @param {String} location - The namespace location of the calling function
-                 */
-                self.warning = function (message, location) {
-                    // Log only if in debug mode
-                    if (debug) {
-                        var builtMessage = buildMessage("WARNING", message, location);
-
-                        console.warn(builtMessage);
-                    }
+                    console.error(builtMessage);
                 }
+            };
 
-                // #endregion warning
+            // #endregion error
 
-                // #endregion Methods
+            // #region info
 
-                // #endregion Public
+            /**
+             * Log the info type message
+             * @param {String} message - The message to log
+             * @param {String} location - The namespace location of the calling function
+             */
+            self.info = function (message, location) {
+                // Log only if in debug mode
+                if (debug) {
+                    var builtMessage = buildMessage("INFO", message, location);
 
-                return self;
-            })(),
+                    console.info(builtMessage);
+                }
+            };
+
+            // #endregion info
+
+            // #region warning
+
+            /**
+             * Log the warning type message
+             * @param {String} message - The message to log
+             * @param {String} location - The namespace location of the calling function
+             */
+            self.warning = function (message, location) {
+                // Log only if in debug mode
+                if (debug) {
+                    var builtMessage = buildMessage("WARNING", message, location);
+
+                    console.warn(builtMessage);
+                }
+            }
+
+            // #endregion warning
+
+            // #endregion Methods
+
+            // #endregion Public
+
+            return self;
+        })(),
 
         // #endregion log
 
         // #region object
 
+        /**
+         * Private self executing function containing the object constructors and helper functions
+         */
+        object = (function () {
+            var self = {};
+
+            // #region Private
+
+            // #region Methods
+
+            // #region buildObjectName
+
             /**
-             * Private self executing function containing the object constructors and helper functions
+             * Concatinate the object name using the prefix and suffix
+             * @param {String} prefix - The prefix of the object name
+             * @param {String} suffix - The suffix of the object name
+             * @returns {String} The concatinated object name
              */
-            object = (function () {
-                var self = {};
+            function buildObjectName(prefix, suffix) {
+                return prefix ? prefix + (suffix || "") : null;
+            }
 
-                // #region Private
+            // #endregion buildObjectName
 
-                // #region Methods
+            // #region buildControllerName
 
-                // #region buildObjectName
+            /**
+             * Concatinate the controller object name
+             * @param {String} prefix - The prefix of the object name
+             * @returns {String} The concatinated object name
+             */
+            function buildControllerName(prefix) {
+                return buildObjectName(prefix, "Controller");
+            }
 
-                /**
-                 * Concatinate the object name using the prefix and suffix
-                 * @param {String} prefix - The prefix of the object name
-                 * @param {String} suffix - The suffix of the object name
-                 * @returns {String} The concatinated object name
-                 */
-                function buildObjectName(prefix, suffix) {
-                    return prefix ? prefix + (suffix || "") : null;
-                }
+            // #endregion buildControllerName
 
-                // #endregion buildObjectName
+            // #region buildTabName
 
-                // #region buildControllerName
+            /**
+             * Concatinate the tab object name
+             * @param {String} prefix - The prefix of the object name
+             * @returns {String} The concatinated object name
+             */
+            function buildTabName(prefix) {
+                return buildObjectName(prefix, "Tab");
+            }
 
-                /**
-                 * Concatinate the controller object name
-                 * @param {String} prefix - The prefix of the object name
-                 * @returns {String} The concatinated object name
-                 */
-                function buildControllerName(prefix) {
-                    return buildObjectName(prefix, "Controller");
-                }
+            // #endregion buildTabName
 
-                // #endregion buildControllerName
+            // #endregion Methods
 
-                // #region buildTabName
+            // #endregion Private
 
-                /**
-                 * Concatinate the tab object name
-                 * @param {String} prefix - The prefix of the object name
-                 * @returns {String} The concatinated object name
-                 */
-                function buildTabName(prefix) {
-                    return buildObjectName(prefix, "Tab");
-                }
+            // #region Public
 
-                // #endregion buildTabName
+            // #region Constructors
 
-                // #endregion Methods
+            // #region Match
 
-                // #endregion Private
+            /**
+             * The Match object constructor
+             * @param {Boolean} success - Did the regex match
+             * @param {String} hash - The matching hash
+             * @param {Object} params - The object containing the named parameters
+             */
+            self.Match = function (success, hash, params) {
+                this.success = success;
+                this.hash = hash;
+                this.params = params;
+            };
 
-                // #region Public
+            // #endregion Match
 
-                // #region Constructors
+            // #region Route
 
-                // #region Match
+            /**
+             * The Route object constructor
+             * @param {String} hash - The unique identifier of the route
+             * @param {Object} params - The object containing the parameters
+             */
+            self.Route = function (hash, params) {
+                this.hash = hash;
+                this.params = params;
+            };
 
-                /**
-                 * The Match object constructor
-                 * @param {Boolean} success - Did the regex match
-                 * @param {String} hash - The matching hash
-                 * @param {Object} params - The object containing the named parameters
-                 */
-                self.Match = function (success, hash, params) {
-                    this.success = success;
-                    this.hash = hash;
-                    this.params = params;
-                };
+            // #endregion Route
 
-                // #endregion Match
+            // #region StatusMessage
 
-                // #region Route
+            /**
+             * The StatusMessage object constructor
+             * @param {String} type - The type of the alert
+             * @param {String} message - The message to display in the alert
+             * @param {String} description - The detailed description of the alert
+             */
+            self.StatusMessage = function (type, message, description) {
+                this.type = type;
+                this.message = message;
+                this.description = description;
+            };
 
-                /**
-                 * The Route object constructor
-                 * @param {String} hash - The unique identifier of the route
-                 * @param {Object} params - The object containing the parameters
-                 */
-                self.Route = function (hash, params) {
-                    this.hash = hash;
-                    this.params = params;
-                };
+            // #endregion StatusMessage
 
-                // #endregion Route
+            // #region Template
 
-                // #region StatusMessage
+            /**
+             * The Template object constructor
+             * @param {String} hash - The unique identifier of the template
+             * @param {Number} type - The template type
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {String} title - The template title used for the document title
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            self.Template = function (hash, type, prefix, title, callback) {
+                this.hash = hash;
+                this.type = type;
+                this.controller = buildControllerName(prefix);
+                this.tab = buildTabName(prefix);
+                this.title = buildObjectName(title);
+                this.callback = callback;
+                this.html = null;
+            };
 
-                /**
-                 * The StatusMessage object constructor
-                 * @param {String} type - The type of the alert
-                 * @param {String} message - The message to display in the alert
-                 * @param {String} description - The detailed description of the alert
-                 */
-                self.StatusMessage = function (type, message, description) {
-                    this.type = type;
-                    this.message = message;
-                    this.description = description;
-                };
+            // #endregion Template
 
-                // #endregion StatusMessage
+            // #endregion Constructors
 
-                // #region Template
+            // #endregion Public
 
-                /**
-                 * The Template object constructor
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {Number} type - The template type
-                 * @param {String} prefix - The prefix used for the controller and tab objects
-                 * @param {String} title - The template title used for the document title
-                 * @param {Function} callback - The function that is executed when the template is loaded
-                 */
-                self.Template = function (hash, type, prefix, title, callback) {
-                    this.hash = hash;
-                    this.type = type;
-                    this.controller = buildControllerName(prefix);
-                    this.tab = buildTabName(prefix);
-                    this.title = buildObjectName(title);
-                    this.callback = callback;
-                    this.html = null;
-                };
-
-                // #endregion Template
-
-                // #endregion Constructors
-
-                // #endregion Public
-
-                return self;
-            })(),
+            return self;
+        })(),
 
         // #endregion object
 
         // #region hashchange
 
+        /**
+         * Private self executing function containing the hashchange functions
+         */
+        hashchange = (function () {
+            var self = {};
+
+            // #region Public
+
+            // #region Methods
+
+            // #region bind
+
             /**
-             * Private self executing function containing the hashchange functions
+             * Bind to the hashchange event
+             * @param {Function} method - A function to execute when the hashchange event fires
              */
-            hashchange = (function () {
-                var self = {};
+            self.bind = function (method) {
+                if (flash.utils.object.isFunction(method)) {
+                    $(window).bind("hashchange", method);
+                }
+            };
 
-                // #region Public
+            // #endregion bind
 
-                // #region Methods
+            // #endregion Methods
 
-                // #region bind
+            // #endregion Public
 
-                /**
-                 * Bind to the hashchange event
-                 * @param {Function} method - A function to execute when the hashchange event fires
-                 */
-                self.bind = function (method) {
-                    if (flash.utils.object.isFunction(method)) {
-                        $(window).bind("hashchange", method);
-                    }
-                };
-
-                // #endregion bind
-
-                // #endregion Methods
-
-                // #endregion Public
-
-                return self;
-            })(),
+            return self;
+        })(),
 
         // #endregion hashchange
 
         // #region templating
 
+        /**
+         * Private self executing function containing the templating functions
+         */
+        templating = (function () {
+            var self = {},
+
+            // #region Private
+
+            // #region Objects
+
+            // #region activeClassName
+
+                activeClassName = "active",
+
+            // #endregion activeClassName
+
+            // #region buttonSelector
+
+                buttonSelector = "button[disabled=disabled],\
+                    input[type=submit][disabled=disabled],\
+                    input[type=button][disabled=disabled],\
+                    input[type=reset][disabled=disabled],\
+                    a.btn[disabled=disabled]",
+
+            // #endregion buttonSelector
+
+            // #region loadedResources
+
+                loadedResources = [],
+
+            // #endregion loadedResources
+
+            // #region modalHiddenEventName
+
+                modalHiddenEventName = "hidden.bs.modal",
+
+            // #endregion modalHiddenEventName
+
+            // #region modalShowEventName
+
+                modalShownEventName = "shown.bs.modal",
+
+            // #endregion modalShowEventName
+
+            // #region responseStatuses
+
+                responseStatuses = { ERROR: "Error", SUCCESS: "Success", WARNING: "Warning" },
+
+            // #endregion responseStatuses
+
+            // #region templates
+
+                templates = [],
+
+            // #endregion templates
+
+            // #region templateTypes
+
+                // TODO: consider moving to flash.templateTypes
+                templateTypes = { PAGE: 0, MODAL: 1 };
+
+            // #endregion templateTypes
+
+            // #endregion Objects
+
+            // #region Methods
+
+            // #region convertHtmlStringToJqueryObject
+
             /**
-             * Private self executing function containing the templating functions
+             * Convert an HTML string into a jQuery object
+             * @param {String} obj - The HTML string
+             * @returns {Object} A jQuery object
              */
-            templating = (function () {
-                var self = {},
+            function convertHtmlStringToJqueryObject(obj) {
+                return $("<div/>").html(obj);
+            }
 
-                // #region Private
+            // #endregion convertHtmlStringToJqueryObject
 
-                // #region Objects
+            // #region runAfterLoad
 
-                // #region activeClassName
-
-                    activeClassName = "active",
-
-                // #endregion activeClassName
-
-                // #region buttonSelector
-
-                    buttonSelector = "button[disabled=disabled],\
-                        input[type=submit][disabled=disabled],\
-                        input[type=button][disabled=disabled],\
-                        input[type=reset][disabled=disabled],\
-                        a.btn[disabled=disabled]",
-
-                // #endregion buttonSelector
-
-                // #region loadedResources
-
-                    loadedResources = [],
-
-                // #endregion loadedResources
-
-                // #region modalHiddenEventName
-
-                    modalHiddenEventName = "hidden.bs.modal",
-
-                // #endregion modalHiddenEventName
-
-                // #region modalShowEventName
-
-                    modalShownEventName = "shown.bs.modal",
-
-                // #endregion modalShowEventName
-
-                // #region responseStatuses
-
-                    responseStatuses = { ERROR: "Error", SUCCESS: "Success", WARNING: "Warning" },
-
-                // #endregion responseStatuses
-
-                // #region templates
-
-                    templates = [],
-
-                // #endregion templates
-
-                // #region templateTypes
-
-                    // TODO: consider moving to flash.templateTypes
-                    templateTypes = { PAGE: 0, MODAL: 1 };
-
-                // #endregion templateTypes
-
-                // #endregion Objects
-
-                // #region Methods
-
-                // #region convertHtmlStringToJqueryObject
-
-                /**
-                 * Convert an HTML string into a jQuery object
-                 * @param {String} obj - The HTML string
-                 * @returns {Object} A jQuery object
-                 */
-                function convertHtmlStringToJqueryObject(obj) {
-                    return $("<div/>").html(obj);
+            /**
+             * Additional template manipulation after template has been loaded
+             * @param {Number} type - The template type
+             * @param {Object} params - The object containing the parameters
+             */
+            function runAfterLoad(type, params) {
+                if (flash.utils.object.isFunction(application.settings.afterLoad)) {
+                    application.settings.afterLoad(type, params);
                 }
 
-                // #endregion convertHtmlStringToJqueryObject
+                // Send google analytics page view data
+                tracking.sendGoogleAnalyticsPageView();
 
-                // #region runAfterLoad
+                // Enable all disabled buttons in the current template
+                flash.$parentElement.find(buttonSelector).attr("disabled", false);
 
-                /**
-                 * Additional template manipulation after template has been loaded
-                 * @param {Number} type - The template type
-                 * @param {Object} params - The object containing the parameters
-                 */
-                function runAfterLoad(type, params) {
-                    if (flash.utils.object.isFunction(application.settings.afterLoad)) {
-                        application.settings.afterLoad(type, params);
+                // Bind click event to any link to allow for reloading page if the href is the current hash
+                $("a").unbind("click").bind("click", function () {
+                    if ($(this).attr("href") === window.location.hash) {
+                        routing.redirect(window.location.hash);
                     }
+                });
 
-                    // Send google analytics page view data
-                    tracking.sendGoogleAnalyticsPageView();
+                // Bind click event to any link buttons to allow for toggling and loading animation
+                flash.$parentElement.find("a.btn").click(function () {
+                    var $button = $(this);
 
-                    // Enable all disabled buttons in the current template
-                    flash.$parentElement.find(buttonSelector).attr("disabled", false);
+                    flash.utils.toggleButton($button);
+                });
 
-                    // Bind click event to any link buttons to allow for toggling and loading animation
-                    flash.$parentElement.find("a.btn").click(function () {
-                        var $button = $(this);
-
-                        flash.utils.toggleButton($button);
-                    });
-
-                    // Bind click event to labels containing span elements to disable default selection of checkbox, if
-                    // checkbox is present
-                    if (application.settings.disableSpanInLabelDefaultAction) {
-                        flash.$parentElement.find("label").has("span").click(function (e) {
-                            if (e.target.nodeName === "SPAN") {
-                                e.preventDefault();
-                            }
-                        });
-                    }
-
-                    // Check to make sure to page loading is active
-                    if (application.settings.showPageLoading) {
-                        var $loading = $("." + application.settings.pageLoadingClassName);
-
-                        // Hide the page loading element if it exists
-                        if ($loading.length) {
-                            $loading.remove();
+                // Bind click event to labels containing span elements to disable default selection of checkbox, if
+                // checkbox is present
+                if (application.settings.disableSpanInLabelDefaultAction) {
+                    flash.$parentElement.find("label").has("span").click(function (e) {
+                        if (e.target.nodeName === "SPAN") {
+                            e.preventDefault();
                         }
-                    }
-                }
-
-                // #endregion runAfterLoad
-
-                // #region runAfterUnload
-
-                /**
-                 * Additional template manipulation after template has been unloaded
-                 * @param {Number} type - The template type
-                 * @param {Object} params - The object containing the parameters
-                 */
-                function runAfterUnload(type, params) {
-                    if (flash.utils.object.isFunction(application.settings.afterUnload)) {
-                        application.settings.afterUnload(type, params);
-                    }
-                }
-
-                // #endregion runAfterUnload
-
-                // #region setActiveTab
-
-                /**
-                 * Set the application active tab and update the view with the active tab
-                 * @param {String} tab - The active tab object name
-                 */
-                function setActiveTab(tab) {
-                    application.activeTab = tab;
-
-                    $("[tab-name]").removeClass(activeClassName);
-                    $("[tab-name*='" + tab + "']").addClass(activeClassName);
-                }
-
-                // #endregion setActiveTab
-
-                // #region displayModalTemplate
-
-                /**
-                 * Inject the modal template into the DOM and bind shown/hidden modal events
-                 * @param {Object} template - The template object
-                 * @param {String} preparedHtml - The HTML string of the template to load
-                 * @param {Object} params - The object containing the parameters
-                 */
-                function displayModalTemplate(template, preparedHtml, params) {
-                    var $modal = $(preparedHtml);
-
-                    $modal.modal();
-
-                    // Hide the modal when a hashchange event fires
-                    hashchange.bind(function () {
-                        $modal.modal("hide");
-                    });
-
-                    $modal.on(modalShownEventName, function () {
-                        if (flash.utils.object.isFunction(template.callback)) {
-                            template.callback();
-                        }
-
-                        runAfterLoad(template.type);
-
-                        // TODO: not sure if this is still required, need to check
-                        //$(".modal-dialog").resize(function () { });
-                    });
-
-                    $modal.on(modalHiddenEventName, function () {
-                        if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
-                            application.settings.beforeUnload(template.type, params);
-                        }
-
-                        if (template.controller &&
-                            window[template.controller] &&
-                            flash.utils.object.isFunction(window[template.controller].unload)) {
-                            window[template.controller].unload(params);
-                        }
-
-                        runAfterUnload(template.type, params);
-
-                        // Unbind the shown/hidden events from the modal
-                        $modal.off(modalShownEventName + "," + modalHiddenEventName);
-
-                        // Remove the modal from the DOM
-                        $modal.remove();
                     });
                 }
 
-                // #endregion displayModalTemplate
+                // Check to make sure to page loading is active
+                if (application.settings.showPageLoading) {
+                    var $loading = $("." + application.settings.pageLoadingClassName);
 
-                // #region displayPageTemplate
+                    // Hide the page loading element if it exists
+                    if ($loading.length) {
+                        $loading.remove();
+                    }
+                }
+            }
 
-                /**
-                 * Inject the page template into the DOM and scroll to the top of the document
-                 * @param {Object} template - The template object
-                 * @param {String} preparedHtml - The HTML string of the template to load
-                 * @param {Object} params - The object containing the parameters
-                 */
-                function displayPageTemplate(template, preparedHtml, params) {
-                    self.setDocumentTitle(template.title);
+            // #endregion runAfterLoad
 
-                    // Set the view to the prepared HTML string
-                    flash.$templateContainerElement.html(preparedHtml);
+            // #region runAfterUnload
 
-                    setActiveTab(template.tab);
+            /**
+             * Additional template manipulation after template has been unloaded
+             * @param {Number} type - The template type
+             * @param {Object} params - The object containing the parameters
+             */
+            function runAfterUnload(type, params) {
+                if (flash.utils.object.isFunction(application.settings.afterUnload)) {
+                    application.settings.afterUnload(type, params);
+                }
+            }
 
-                    flash.utils.scrollTo(flash.$parentElement, flash.$templateContainerElement);
+            // #endregion runAfterUnload
 
+            // #region setActiveTab
+
+            /**
+             * Set the application active tab and update the view with the active tab
+             * @param {String} tab - The active tab object name
+             */
+            function setActiveTab(tab) {
+                application.activeTab = tab;
+
+                $("[tab-name]").removeClass(activeClassName);
+                $("[tab-name*='" + tab + "']").addClass(activeClassName);
+            }
+
+            // #endregion setActiveTab
+
+            // #region displayModalTemplate
+
+            /**
+             * Inject the modal template into the DOM and bind shown/hidden modal events
+             * @param {Object} template - The template object
+             * @param {String} preparedHtml - The HTML string of the template to load
+             * @param {Object} params - The object containing the parameters
+             */
+            function displayModalTemplate(template, preparedHtml, params) {
+                var $modal = $(preparedHtml);
+
+                $modal.modal();
+
+                // Hide the modal when a hashchange event fires
+                hashchange.bind(function () {
+                    $modal.modal("hide");
+                });
+
+                $modal.on(modalShownEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
                         template.callback();
                     }
 
-                    runAfterLoad(template.type, params);
-                }
+                    runAfterLoad(template.type);
 
-                // #endregion displayPageTemplate
+                    // TODO: not sure if this is still required, need to check
+                    //$(".modal-dialog").resize(function () { });
+                });
 
-                // #region getTemplate
-
-                /**
-                 * Try to find the template in the client browser session
-                 * @param {String} hash - The unique identifier of the template
-                 * @returns {Object} The template object 
-                 */
-                function getTemplate(hash) {
-                    for (var i = 0; i < templates.length; i++) {
-                        if (hash === templates[i].hash) {
-                            return templates[i];
-                        }
-                    }
-
-                    return null;
-                }
-
-                // #endregion getTemplate
-
-                // #region getModalTemplate
-
-                /**
-                 * Get the modal template object
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {String} prefix - The prefix used for the controller and tab objects
-                 * @param {Function} callback - The function that is executed when the template is loaded
-                 * @returns
-                 */
-                function getModalTemplate(hash, prefix, callback) {
-                    return new object.Template(hash, templateTypes.MODAL, prefix, null, callback);
-                }
-
-                // #endregion getModalTemplate
-
-                // #region getPageTemplate
-
-                /**
-                 * Get the page template object
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {String} prefix - The prefix used for the controller and tab objects
-                 * @param {String} title - The template title used for the document title
-                 * @param {Function} callback - The function that is executed when the template is loaded
-                 * @returns
-                 */
-                function getPageTemplate(hash, prefix, title, callback) {
-                    return new object.Template(hash, templateTypes.PAGE, prefix, title, callback);
-                }
-
-                // #endregion getPageTemplate
-
-                // #region isResourceLoaded
-
-                /**
-                 * Check whether the supplied source path has been loaded
-                 * @param {String} src - The unqiue source path of the resource to check
-                 * @returns {Boolean} Is the resource loaded at the supplied source
-                 */
-                function isResourceLoaded(src) {
-                    return $.inArray(src, loadedResources) >= 0;
-                }
-
-                // #endregion isResourceLoaded
-
-                // #region loadTemplate
-
-                /**
-                 * Load the template for the supplied hash from client browser session or request new template
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {Object} params - The object containing the parameters
-                 * @param {String} url - The url of the view (html) to load
-                 * @param {String} title - The template title used for the document title
-                 * @param {String} prefix - The prefix used for the controller and tab objects
-                 * @param {Number} type - The template type
-                 * @param {Function} callback - The function that is executed when the template is loaded
-                 */
-                function loadTemplate(hash, params, url, title, prefix, type, callback) {
-                    var template = getTemplate(hash);
-
-                    log.info(hash, "templating.loadTemplate");
-
-                    if (template) {
-                        template.init(params);
-                    } else {
-                        log.info("new " + hash, "templating.loadTemplate");
-
-                        template = type === templateTypes.PAGE
-                            ? getPageTemplate(hash, prefix, title, callback)
-                            : getModalTemplate(hash, prefix, callback);
-
-                        template.request(url, params);
-                    }
-                }
-
-                // #endregion loadTemplate
-
-                // #endregion Methods
-
-                // #endregion Private
-
-                // #region Public
-
-                // #region Objects
-
-                // #region templateTypes
-
-                self.templateTypes = templateTypes;
-
-                // #endregion templateTypes
-
-                // #endregion Objects
-
-                // #region Methods
-
-                // #region clear
-
-                /**
-                 * Clear the client browser session templates
-                 */
-                self.clear = function () {
-                    templates = [];
-                };
-
-                // #endregion clear
-
-                // #region loadModalTemplate
-
-                /**
-                 * Load the modal template
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {String} url - The url of the view (html) to load
-                 * @param {String} prefix - The prefix used for the controller and tab objects
-                 * @param {Object} params - The object containing the parameters
-                 * @param {Function} callback - The function that is executed when the template is loaded
-                 */
-                self.loadModalTemplate = function (hash, url, prefix, params, callback) {
-                    loadTemplate(hash, params, url, null, prefix, templateTypes.MODAL, callback);
-                };
-
-                // #endregion loadModalTemplate
-
-                // #region loadPageTemplate
-
-                /**
-                 * Load the page template
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {String} url - The url of the view (html) to load
-                 * @param {String} title - The template title used for the document title
-                 * @param {String} prefix - The prefix used for the controller and tab objects
-                 * @param {Object} params - The object containing the parameters
-                 * @param {Function} callback - The function that is executed when the template is loaded
-                 */
-                self.loadPageTemplate = function (hash, url, title, prefix, params, callback) {
-                    loadTemplate(hash, params, url, title, prefix, templateTypes.PAGE, callback);
-                };
-
-                // #endregion loadPageTemplate
-
-                // #region setDocumentTitle
-
-                /**
-                 * Set the document title
-                 * @param {string} pagetTitle - The title of the template page that has been loaded
-                 */
-                self.setDocumentTitle = function (pagetTitle) {
-                    document.title = pagetTitle
-                        ? pagetTitle + (application.title ? " | " + application.title : "")
-                        : application.title;
-                };
-
-                // #endregion setDocumentTitle
-
-                // #region unloadTemplate
-
-                /**
-                 * Run clean up right before and/or after the template has been unloaded
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {Object} params - The object containing the parameters
-                 */
-                self.unloadTemplate = function (hash, params) {
-                    var template = getTemplate(hash);
-
-                    // Ensure we have a template object
-                    if (!template) {
-                        log.warning(
-                            "Template was not found for route hash '" + hash + "', therefore, unload was skipped.",
-                            "templating.unloadTemplate");
-
-                        return;
-                    }
-
-                    // Check to make sure to page loading is active
-                    if (application.settings.showPageLoading) {
-                        var $body = $("body"),
-                            $div = $("<div/>", {
-                                "class": application.settings.pageLoadingClassName
-                            });
-
-                        $("<span/>").text("Loading...").appendTo($div);
-
-                        // Add the page loading element to the body element
-                        $body.prepend($div);
-                    }
-
-                    // Check if pre-defined before unload function is still a function and run it in case it was overloaded by user
+                $modal.on(modalHiddenEventName, function () {
                     if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
                         application.settings.beforeUnload(template.type, params);
                     }
 
-                    // Check to make sure template controller has an unload before running the unload function
                     if (template.controller &&
                         window[template.controller] &&
                         flash.utils.object.isFunction(window[template.controller].unload)) {
@@ -858,186 +611,440 @@
                     }
 
                     runAfterUnload(template.type, params);
-                };
 
-                // #endregion unloadTemplate
+                    // Unbind the shown/hidden events from the modal
+                    $modal.off(modalShownEventName + "," + modalHiddenEventName);
 
-                // #region object.Template.prototype.add
+                    // Remove the modal from the DOM
+                    $modal.remove();
+                });
+            }
 
-                /**
-                 * Add the template to the client browser session
-                 * @param {Object} params - The object containing the parameters
-                 */
-                object.Template.prototype.add = function (params) {
-                    var template = this;
+            // #endregion displayModalTemplate
 
-                    templates.push(template);
+            // #region displayPageTemplate
 
+            /**
+             * Inject the page template into the DOM and scroll to the top of the document
+             * @param {Object} template - The template object
+             * @param {String} preparedHtml - The HTML string of the template to load
+             * @param {Object} params - The object containing the parameters
+             */
+            function displayPageTemplate(template, preparedHtml, params) {
+                self.setDocumentTitle(template.title);
+
+                // Set the view to the prepared HTML string
+                flash.$templateContainerElement.html(preparedHtml);
+
+                setActiveTab(template.tab);
+
+                flash.utils.scrollTo(flash.$parentElement, flash.$templateContainerElement);
+
+                if (flash.utils.object.isFunction(template.callback)) {
+                    template.callback();
+                }
+
+                runAfterLoad(template.type, params);
+            }
+
+            // #endregion displayPageTemplate
+
+            // #region getTemplate
+
+            /**
+             * Try to find the template in the client browser session
+             * @param {String} hash - The unique identifier of the template
+             * @returns {Object} The template object 
+             */
+            function getTemplate(hash) {
+                for (var i = 0; i < templates.length; i++) {
+                    if (hash === templates[i].hash) {
+                        return templates[i];
+                    }
+                }
+
+                return null;
+            }
+
+            // #endregion getTemplate
+
+            // #region getModalTemplate
+
+            /**
+             * Get the modal template object
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Function} callback - The function that is executed when the template is loaded
+             * @returns
+             */
+            function getModalTemplate(hash, prefix, callback) {
+                return new object.Template(hash, templateTypes.MODAL, prefix, null, callback);
+            }
+
+            // #endregion getModalTemplate
+
+            // #region getPageTemplate
+
+            /**
+             * Get the page template object
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {String} title - The template title used for the document title
+             * @param {Function} callback - The function that is executed when the template is loaded
+             * @returns
+             */
+            function getPageTemplate(hash, prefix, title, callback) {
+                return new object.Template(hash, templateTypes.PAGE, prefix, title, callback);
+            }
+
+            // #endregion getPageTemplate
+
+            // #region isResourceLoaded
+
+            /**
+             * Check whether the supplied source path has been loaded
+             * @param {String} src - The unqiue source path of the resource to check
+             * @returns {Boolean} Is the resource loaded at the supplied source
+             */
+            function isResourceLoaded(src) {
+                return $.inArray(src, loadedResources) >= 0;
+            }
+
+            // #endregion isResourceLoaded
+
+            // #region loadTemplate
+
+            /**
+             * Load the template for the supplied hash from client browser session or request new template
+             * @param {String} hash - The unique identifier of the template
+             * @param {Object} params - The object containing the parameters
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} title - The template title used for the document title
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Number} type - The template type
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            function loadTemplate(hash, params, url, title, prefix, type, callback) {
+                var template = getTemplate(hash);
+
+                log.info(hash, "templating.loadTemplate");
+
+                if (template) {
                     template.init(params);
-                };
+                } else {
+                    log.info("new " + hash, "templating.loadTemplate");
 
-                // #endregion object.Template.prototype.add
+                    template = type === templateTypes.PAGE
+                        ? getPageTemplate(hash, prefix, title, callback)
+                        : getModalTemplate(hash, prefix, callback);
 
-                // #region object.Template.prototype.display
+                    template.request(url, params);
+                }
+            }
 
-                /**
-                 * Inject the template into the DOM and run before load manipulation to the HTML string
-                 * @param {String} preparedHtml - The HTML string of the template to load
-                 * @param {Object} params - The object containing the parameters
-                 */
-                object.Template.prototype.display = function (preparedHtml, params) {
-                    var template = this;
+            // #endregion loadTemplate
 
-                    if (flash.utils.object.isFunction(application.settings.beforeLoad)) {
-                        application.settings.beforeLoad(template.type, preparedHtml, params);
-                    }
+            // #endregion Methods
 
-                    if (template.type === templateTypes.PAGE) {
-                        displayPageTemplate(template, preparedHtml, params);
-                    } else {
-                        displayModalTemplate(template, preparedHtml, params);
-                    }
-                };
+            // #endregion Private
 
-                // #endregion object.Template.prototype.display
+            // #region Public
 
-                // #region object.Template.prototype.init
+            // #region Objects
 
-                /**
-                 * Initiate the template display using the controller init function, if controller exists
-                 * @param {Object} params - The object containing the parameters
-                 */
-                object.Template.prototype.init = function (params) {
-                    var template = this;
+            // #region templateTypes
 
-                    // Check if the controller exists, then call the controller init function, else display the template
-                    if (template.controller &&
-                        window[template.controller] &&
-                        flash.utils.object.isFunction(window[template.controller].init)) {
-                        var $templateHtml = convertHtmlStringToJqueryObject(template.html),
-                            callback = function () {
-                                template.display($templateHtml.html(), params);
-                            };
+            self.templateTypes = templateTypes;
 
-                        window[template.controller].init(callback, params, $templateHtml);
-                    } else {
-                        log.warning(
-                            "View for '" + template.hash + "' does not have a controller. By default, a view does not need a controller, therefore, ignore this warning if excluding a controller was intentional.",
-                            "templating.object.template.prototype.init");
+            // #endregion templateTypes
 
-                        template.display(template.html, params);
-                    }
-                };
+            // #endregion Objects
 
-                // #endregion object.Template.prototype.init
+            // #region Methods
 
-                // #region object.Template.prototype.preloadCallback
+            // #region clear
 
-                /**
-                 * Preload callback to check if all resouces have been loaded
-                 * @param {Object} $data - The jQuery object containing the HTML of the template
-                 * @param {Object} $element - The element that has been loaded
-                 * @param {Number} elementLoadCounter - The remaining element count to load
-                 * @param {Object} params - The object containing the parameters
-                 * @param {String} src - The unqiue source path of the resource to add to client browser session
-                 */
-                object.Template.prototype.preloadCallback = function ($data, $element, elementLoadCounter, params, src) {
-                    var template = this;
+            /**
+             * Clear the client browser session templates
+             */
+            self.clear = function () {
+                templates = [];
+            };
 
-                    if (src) {
-                        loadedResources.push(src);
-                    }
+            // #endregion clear
 
-                    // Remove the script element in order to reduce loading same script after initial load
-                    if ($element.is("script")) {
-                        $element.remove();
-                    }
+            // #region loadModalTemplate
 
-                    if (elementLoadCounter <= 0) {
-                        template.html = $data.html();
+            /**
+             * Load the modal template
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Object} params - The object containing the parameters
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            self.loadModalTemplate = function (hash, url, prefix, params, callback) {
+                loadTemplate(hash, params, url, null, prefix, templateTypes.MODAL, callback);
+            };
 
-                        template.add(params);
-                    }
-                };
+            // #endregion loadModalTemplate
 
-                // #endregion object.Template.prototype.preloadCallback
+            // #region loadPageTemplate
 
-                // #region object.Template.prototype.preload
+            /**
+             * Load the page template
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} title - The template title used for the document title
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Object} params - The object containing the parameters
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            self.loadPageTemplate = function (hash, url, title, prefix, params, callback) {
+                loadTemplate(hash, params, url, title, prefix, templateTypes.PAGE, callback);
+            };
 
-                /**
-                 * Preload all image and script resources within the template HTML
-                 * @param {String} html - The HTML string of the template to load
-                 * @param {Object} params - The object containing the parameters
-                 */
-                object.Template.prototype.preload = function (html, params) {
-                    var template = this,
-                        $html = convertHtmlStringToJqueryObject(html),
-                        elementsToLoad = "script[src],img[src]";
+            // #endregion loadPageTemplate
 
-                    if ($html.find(elementsToLoad).length > 0) {
-                        var elementLoadCounter = $html.find(elementsToLoad).length;
+            // #region setDocumentTitle
 
-                        $html.find(elementsToLoad).each(function () {
-                            var $element = $(this),
-                                src = $element.attr("src");
+            /**
+             * Set the document title
+             * @param {string} pagetTitle - The title of the template page that has been loaded
+             */
+            self.setDocumentTitle = function (pagetTitle) {
+                document.title = pagetTitle
+                    ? pagetTitle + (application.title ? " | " + application.title : "")
+                    : application.title;
+            };
 
-                            if (!src || isResourceLoaded(src)) {
-                                template.preloadCallback($html, $element, --elementLoadCounter, params);
-                            } else {
-                                if ($element.is("img")) {
-                                    flash.http.getImage(src, function () {
-                                        template.preloadCallback($html, $element, --elementLoadCounter, params, src);
-                                    });
-                                } else if ($element.is("script")) {
-                                    flash.http.getScript(src, function () {
-                                        template.preloadCallback($html, $element, --elementLoadCounter, params, src);
-                                    });
-                                }
-                            }
+            // #endregion setDocumentTitle
+
+            // #region unloadTemplate
+
+            /**
+             * Run clean up right before and/or after the template has been unloaded
+             * @param {String} hash - The unique identifier of the template
+             * @param {Object} params - The object containing the parameters
+             */
+            self.unloadTemplate = function (hash, params) {
+                var template = getTemplate(hash);
+
+                // Ensure we have a template object
+                if (!template) {
+                    log.warning(
+                        "Template was not found for route hash '" + hash + "', therefore, unload was skipped.",
+                        "templating.unloadTemplate");
+
+                    return;
+                }
+
+                // Check to make sure to page loading is active
+                if (application.settings.showPageLoading) {
+                    var $body = $("body"),
+                        $div = $("<div/>", {
+                            "class": application.settings.pageLoadingClassName
                         });
-                    } else {
-                        template.html = $html.html();
 
-                        template.add(params);
-                    }
-                };
+                    $("<span/>").text("Loading...").appendTo($div);
 
-                // #endregion object.Template.prototype.preload
+                    // Add the page loading element to the body element
+                    $body.prepend($div);
+                }
 
-                // #region object.Template.prototype.request
+                // Check if pre-defined before unload function is still a function and run it in case it was overloaded by user
+                if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
+                    application.settings.beforeUnload(template.type, params);
+                }
 
-                /**
-                 * Load the HTML data from the server using a HTTP GET request
-                 * @param {String} url - The url of the view (html) to load
-                 * @param {Object} params - The object containing the parameters
-                 */
-                object.Template.prototype.request = function (url, params) {
-                    var template = this;
+                // Check to make sure template controller has an unload before running the unload function
+                if (template.controller &&
+                    window[template.controller] &&
+                    flash.utils.object.isFunction(window[template.controller].unload)) {
+                    window[template.controller].unload(params);
+                }
 
-                    flash.http.get(
-                        url,
-                        function (data) {
-                            if (!data.Status) {
-                                template.preload(data, params);
-                            } else if (data.Status === responseStatuses.ERROR) {
-                                flash.utils.displayErrorPage(data.Message);
-                            } else if (data.Status === responseStatuses.SUCCESS) {
-                                flash.utils.displayMessagePage(flash.alert.types.SUCCESS, data.Message);
-                            } else if (data.Status === responseStatuses.WARNING) {
-                                flash.utils.displayMessagePage(flash.alert.types.WARNING, data.Message);
+                runAfterUnload(template.type, params);
+            };
+
+            // #endregion unloadTemplate
+
+            // #region object.Template.prototype.add
+
+            /**
+             * Add the template to the client browser session
+             * @param {Object} params - The object containing the parameters
+             */
+            object.Template.prototype.add = function (params) {
+                var template = this;
+
+                templates.push(template);
+
+                template.init(params);
+            };
+
+            // #endregion object.Template.prototype.add
+
+            // #region object.Template.prototype.display
+
+            /**
+             * Inject the template into the DOM and run before load manipulation to the HTML string
+             * @param {String} preparedHtml - The HTML string of the template to load
+             * @param {Object} params - The object containing the parameters
+             */
+            object.Template.prototype.display = function (preparedHtml, params) {
+                var template = this;
+
+                if (flash.utils.object.isFunction(application.settings.beforeLoad)) {
+                    application.settings.beforeLoad(template.type, preparedHtml, params);
+                }
+
+                if (template.type === templateTypes.PAGE) {
+                    displayPageTemplate(template, preparedHtml, params);
+                } else {
+                    displayModalTemplate(template, preparedHtml, params);
+                }
+            };
+
+            // #endregion object.Template.prototype.display
+
+            // #region object.Template.prototype.init
+
+            /**
+             * Initiate the template display using the controller init function, if controller exists
+             * @param {Object} params - The object containing the parameters
+             */
+            object.Template.prototype.init = function (params) {
+                var template = this;
+
+                // Check if the controller exists, then call the controller init function, else display the template
+                if (template.controller &&
+                    window[template.controller] &&
+                    flash.utils.object.isFunction(window[template.controller].init)) {
+                    var $templateHtml = convertHtmlStringToJqueryObject(template.html),
+                        callback = function () {
+                            template.display($templateHtml.html(), params);
+                        };
+
+                    window[template.controller].init(callback, params, $templateHtml);
+                } else {
+                    log.warning(
+                        "View for '" + template.hash + "' does not have a controller. By default, a view does not need a controller, therefore, ignore this warning if excluding a controller was intentional.",
+                        "templating.object.template.prototype.init");
+
+                    template.display(template.html, params);
+                }
+            };
+
+            // #endregion object.Template.prototype.init
+
+            // #region object.Template.prototype.preloadCallback
+
+            /**
+             * Preload callback to check if all resouces have been loaded
+             * @param {Object} $data - The jQuery object containing the HTML of the template
+             * @param {Object} $element - The element that has been loaded
+             * @param {Number} elementLoadCounter - The remaining element count to load
+             * @param {Object} params - The object containing the parameters
+             * @param {String} src - The unqiue source path of the resource to add to client browser session
+             */
+            object.Template.prototype.preloadCallback = function ($data, $element, elementLoadCounter, params, src) {
+                var template = this;
+
+                if (src) {
+                    loadedResources.push(src);
+                }
+
+                // Remove the script element in order to reduce loading same script after initial load
+                if ($element.is("script")) {
+                    $element.remove();
+                }
+
+                if (elementLoadCounter <= 0) {
+                    template.html = $data.html();
+
+                    template.add(params);
+                }
+            };
+
+            // #endregion object.Template.prototype.preloadCallback
+
+            // #region object.Template.prototype.preload
+
+            /**
+             * Preload all image and script resources within the template HTML
+             * @param {String} html - The HTML string of the template to load
+             * @param {Object} params - The object containing the parameters
+             */
+            object.Template.prototype.preload = function (html, params) {
+                var template = this,
+                    $html = convertHtmlStringToJqueryObject(html),
+                    elementsToLoad = "script[src],img[src]";
+
+                if ($html.find(elementsToLoad).length > 0) {
+                    var elementLoadCounter = $html.find(elementsToLoad).length;
+
+                    $html.find(elementsToLoad).each(function () {
+                        var $element = $(this),
+                            src = $element.attr("src");
+
+                        if (!src || isResourceLoaded(src)) {
+                            template.preloadCallback($html, $element, --elementLoadCounter, params);
+                        } else {
+                            if ($element.is("img")) {
+                                flash.http.getImage(src, function () {
+                                    template.preloadCallback($html, $element, --elementLoadCounter, params, src);
+                                });
+                            } else if ($element.is("script")) {
+                                flash.http.getScript(src, function () {
+                                    template.preloadCallback($html, $element, --elementLoadCounter, params, src);
+                                });
                             }
                         }
-                    );
-                };
+                    });
+                } else {
+                    template.html = $html.html();
 
-                // #endregion object.Template.prototype.request
+                    template.add(params);
+                }
+            };
 
-                // #endregion Methods
+            // #endregion object.Template.prototype.preload
 
-                // #endregion Public
+            // #region object.Template.prototype.request
 
-                return self;
-            })(),
+            /**
+             * Load the HTML data from the server using a HTTP GET request
+             * @param {String} url - The url of the view (html) to load
+             * @param {Object} params - The object containing the parameters
+             */
+            object.Template.prototype.request = function (url, params) {
+                var template = this;
+
+                flash.http.get(
+                    url,
+                    function (data) {
+                        if (!data.Status) {
+                            template.preload(data, params);
+                        } else if (data.Status === responseStatuses.ERROR) {
+                            flash.utils.displayErrorPage(data.Message);
+                        } else if (data.Status === responseStatuses.SUCCESS) {
+                            flash.utils.displayMessagePage(flash.alert.types.SUCCESS, data.Message);
+                        } else if (data.Status === responseStatuses.WARNING) {
+                            flash.utils.displayMessagePage(flash.alert.types.WARNING, data.Message);
+                        }
+                    }
+                );
+            };
+
+            // #endregion object.Template.prototype.request
+
+            // #endregion Methods
+
+            // #endregion Public
+
+            return self;
+        })(),
 
         // #endregion templating
 
@@ -1103,502 +1110,508 @@
 
         // #region routing
 
+        /**
+         * Private self executing function containing the routing functions
+         */
+        routing = (function () {
+            var self = {},
+
+            // #region Private
+
+            // #region Objects
+
+            // #region escapedRegexQueryIdentifier
+
+                escapedRegexQueryIdentifier = "\\?",
+
+            // #endregion escapedRegexQueryIdentifier
+
+            // #region hashPrefix
+
+                hashPrefix = "#/",
+
+            // #endregion hashPrefix
+
+            // #region namedParameterIdentifier
+
+                namedParameterIdentifier = "{",
+
+            // #endregion namedParameterIdentifier
+
+            // #region onLoads
+
+                onLoads = {},
+
+            // #endregion onLoads
+
+            // #region onUnloads
+
+                onUnloads = {},
+
+            // #endregion onUnloads
+
+            // #region previousRouteHash
+
+                previousRouteHash = null,
+
+            // #endregion previousRouteHash
+
+            // #region queryIdentifier
+
+                queryIdentifier = "?",
+
+            // #endregion queryIdentifier
+
+            // #region queryStringNameValueSeparator
+
+                queryStringNameValueSeparator = "=",
+
+            // #endregion queryStringNameValueSeparator
+
+            // #region regexNamedParameters
+
+                regexNamedParameters = /{\w+}/g,
+
+            // #endregion regexNamedParameters
+
+            // #region regexNonNamedParameters
+
+                regexNonNamedParameters = /%s/g,
+
+            // #endregion regexNonNamedParameters
+
+            // #region regexNonNamedParameterString
+
+                regexNonNamedParameterString = "%s",
+
+            // #endregion regexNonNamedParameterString
+
+            // #region regexParametersMatchString
+
+                regexParametersMatchString = "(.+)",
+
+            // #endregion regexParametersMatchString
+
+            // #region regexQueryIdentifier
+
+                regexQueryIdentifier = "\?",
+
+            // #endregion regexQueryIdentifier
+
+            // #region regexRoutes
+
+                regexRoutes = [],
+
+            // #endregion regexRoutes
+
+            // #region regexStartAnchor
+
+                regexStartAnchor = "^",
+
+            // #endregion regexStartAnchor
+
+            // #region routePathDivider
+
+                routePathDivider = "/";
+
+            // #endregion routePathDivider
+
+            // #endregion Objects
+
+            // #region Methods
+
+            // #region addOnLoad
+
             /**
-             * Private self executing function containing the routing functions
+             * Add the load method to the client browser session for the specified unique hash
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} routeHash - The requested route hash
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} title - The template title used for the document title
+             * @param {String} prefix - The prefix used for the controller and tab objects
              */
-            routing = (function () {
-                var self = {},
+            function addOnLoad(hash, routeHash, url, title, prefix) {
+                onLoads[hash] = function (params) {
+                    templating.loadPageTemplate(routeHash, url, title, prefix, params);
+                };
+            }
 
-                // #region Private
+            // #endregion addOnLoad
 
-                // #region Objects
+            // #region addOnUnload
 
-                // #region escapedRegexQueryIdentifier
+            /**
+             * Add the unload method to the client browser session for the specified unique hash
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} routeHash - The requested route hash
+             */
+            function addOnUnload(hash, routeHash) {
+                onUnloads[hash] = function (params) {
+                    templating.unloadTemplate(routeHash, params);
+                };
+            }
 
-                    escapedRegexQueryIdentifier = "\\?",
+            // #endregion addOnUnload
 
-                // #endregion escapedRegexQueryIdentifier
+            // #region addRegexRoute
 
-                // #region hashPrefix
+            /**
+             * Add the regex route to the browser session
+             * @param {String} hash - The unique identifier of the template
+             * @param {Object} params - The object containing the parameters
+             * @returns {String} The updated hash with regex match strings
+             */
+            function addRegexRoute(hash, params) {
+                hash = regexStartAnchor + hash.replace(regexQueryIdentifier, escapedRegexQueryIdentifier);
 
-                    hashPrefix = "#/",
+                // If hash containes non named parameters
+                if (hash.indexOf(regexNonNamedParameterString) >= 0) {
+                    hash = hash.replace(regexNonNamedParameters, regexParametersMatchString);
 
-                // #endregion hashPrefix
+                    regexRoutes.push(new object.Route(hash));
+                    // Else the hash contains named parameters
+                } else {
+                    hash = hash.replace(regexNamedParameters, regexParametersMatchString);
 
-                // #region namedParameterIdentifier
-
-                    namedParameterIdentifier = "{",
-
-                // #endregion namedParameterIdentifier
-
-                // #region onLoads
-
-                    onLoads = {},
-
-                // #endregion onLoads
-
-                // #region onUnloads
-
-                    onUnloads = {},
-
-                // #endregion onUnloads
-
-                // #region previousRouteHash
-
-                    previousRouteHash = null,
-
-                // #endregion previousRouteHash
-
-                // #region queryIdentifier
-
-                    queryIdentifier = "?",
-
-                // #endregion queryIdentifier
-
-                // #region queryStringNameValueSeparator
-
-                    queryStringNameValueSeparator = "=",
-
-                // #endregion queryStringNameValueSeparator
-
-                // #region regexNamedParameters
-
-                    regexNamedParameters = /{\w+}/g,
-
-                // #endregion regexNamedParameters
-
-                // #region regexNonNamedParameters
-
-                    regexNonNamedParameters = /%s/g,
-
-                // #endregion regexNonNamedParameters
-
-                // #region regexNonNamedParameterString
-
-                    regexNonNamedParameterString = "%s",
-
-                // #endregion regexNonNamedParameterString
-
-                // #region regexParametersMatchString
-
-                    regexParametersMatchString = "(.+)",
-
-                // #endregion regexParametersMatchString
-
-                // #region regexQueryIdentifier
-
-                    regexQueryIdentifier = "\?",
-
-                // #endregion regexQueryIdentifier
-
-                // #region regexRoutes
-
-                    regexRoutes = [],
-
-                // #endregion regexRoutes
-
-                // #region regexStartAnchor
-
-                    regexStartAnchor = "^",
-
-                // #endregion regexStartAnchor
-
-                // #region routePathDivider
-
-                    routePathDivider = "/";
-
-                // #endregion routePathDivider
-
-                // #endregion Objects
-
-                // #region Methods
-
-                // #region addOnLoad
-
-                /**
-                 * Add the load method to the client browser session for the specified unique hash
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {String} routeHash - The requested route hash
-                 * @param {String} url - The url of the view (html) to load
-                 * @param {String} title - The template title used for the document title
-                 * @param {String} prefix - The prefix used for the controller and tab objects
-                 */
-                function addOnLoad(hash, routeHash, url, title, prefix) {
-                    onLoads[hash] = function (params) {
-                        templating.loadPageTemplate(routeHash, url, title, prefix, params);
-                    };
+                    regexRoutes.push(new object.Route(hash, params));
                 }
 
-                // #endregion addOnLoad
+                return hash;
+            }
 
-                // #region addOnUnload
+            // #endregion addRegexRoute
 
-                /**
-                 * Add the unload method to the client browser session for the specified unique hash
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {String} routeHash - The requested route hash
-                 */
-                function addOnUnload(hash, routeHash) {
-                    onUnloads[hash] = function (params) {
-                        templating.unloadTemplate(routeHash, params);
-                    };
+            // #region buildHash
+
+            /**
+             * Build the hash to ensure a hashtag/slash prefix
+             * @param {String} path - The route identifier, must be unique
+             * @returns {String} The updated hash containing the hashtag/slash prefix
+             */
+            function buildHash(path) {
+                // Ensure the path is a string
+                if (flash.utils.object.isString(path)) {
+                    // Return the path if the hashtag/slash prefix exists
+                    if (path.indexOf(hashPrefix) === 0) {
+                        return path;
+                    }
+
+                    var hashtag = "#",
+                        hashtagIndex = path.indexOf(hashtag),
+                        slashIndex = path.indexOf("/");
+
+                    // Neither hashtag nor slash exist, prepend to the hash
+                    if (hashtagIndex !== 0 && slashIndex !== 0) {
+                        return hashPrefix + path;
+                    }
+
+                    // hashtag does not exist, but slash exists
+                    if (hashtagIndex !== 0 && slashIndex === 0) {
+                        return hashtag + path;
+                    }
+
+                    // hashtag exists, but slash does not
+                    if (hashtagIndex === 0 && slashIndex !== 1) {
+                        return hashPrefix + path.substring(1);
+                    }
                 }
 
-                // #endregion addOnUnload
+                log.error("Route path '" + path + "' is not properly formatted.", "routing.buildHash");
 
-                // #region addRegexRoute
+                return null;
+            }
 
-                /**
-                 * Add the regex route to the browser session
-                 * @param {String} hash - The unique identifier of the template
-                 * @param {Object} params - The object containing the parameters
-                 * @returns {String} The updated hash with regex match strings
-                 */
-                function addRegexRoute(hash, params) {
-                    hash = regexStartAnchor + hash.replace(regexQueryIdentifier, escapedRegexQueryIdentifier);
+            // #endregion buildHash
 
-                    // If hash containes non named parameters
-                    if (hash.indexOf(regexNonNamedParameterString) >= 0) {
-                        hash = hash.replace(regexNonNamedParameters, regexParametersMatchString);
+            // #region getRoute
 
-                        regexRoutes.push(new object.Route(hash));
-                        // Else the hash contains named parameters
+            /**
+             * Get the route object containing the unique hash and named params
+             * @param {String} hash - The unique identifier of the template
+             * @returns {Object} The route object
+             */
+            function getRoute(hash) {
+                // Get the params by name and update the hash if named parameters are present in the querystring
+                if (hash.indexOf(regexNonNamedParameterString) < 0) {
+                    var params = hash.match(regexNamedParameters),
+                        hasQueryString = hash.indexOf(queryIdentifier) >= 0;
+
+                    if (!params) {
+                        return new object.Route(hash);
+                    }
+
+                    for (var i = 0; i < params.length; i++) {
+                        var param = params[i],
+                            paramName = param.slice(1, -1);
+
+                        if (hasQueryString) {
+                            var queryStringParam = paramName + queryStringNameValueSeparator + param;
+
+                            // Add the name value pair string (name=value) to the hash
+                            hash = hash.replace(param, queryStringParam);
+                        }
+
+                        params[i] = paramName;
+                    }
+
+                    return new object.Route(hash, params);
+                }
+
+                return new object.Route(hash);
+            }
+
+            // #endregion getRoute
+
+            // #region regexMatch
+
+            /**
+             * Match the requested route hash with an existing unique regex hash
+             * @param {String} routeHash - The requested route hash
+             * @returns {Object} The match object
+             */
+            function regexMatch(routeHash) {
+                for (var i = regexRoutes.length - 1; i >= 0; i--) {
+                    var route = regexRoutes[i],
+                        regExp = new RegExp(route.hash);
+
+                    if (!regExp.test(routeHash)) {
+                        continue;
+                    }
+
+                    log.info(route.hash, "routing.regexMatch");
+
+                    var map,
+                        params = routeHash.match(regExp);
+
+                    // Remove the static part of the hash
+                    params = params.slice(1, params.length);
+
+                    // Get the hashmap of named parameters if they are part of the unique hash
+                    if (route.params) {
+                        map = {};
+
+                        for (var j = 0; j < route.params.length; j++) {
+                            if (!route.params[j] || !params[j]) {
+                                log.error(
+                                    "Named parameters did not match properly based on route. Please verify the route definition.",
+                                    "routing.regexMatch");
+
+                                break;
+                            }
+
+                            map[route.params[j]] = params[j];
+                        }
+                    }
+
+                    return new object.Match(true, route.hash, map || params);
+                }
+
+                return new object.Match(false);
+            }
+
+            // #endregion regexMatch
+
+            // #region runOnLoad
+
+            /**
+             * Execute the load method for the requested route hash
+             * @param {String} routeHash - The requested route hash
+             * @param {String} routeHashLower - The requested route hash in lower case form
+             */
+            function runOnLoad(routeHash, routeHashLower) {
+                var onLoad = onLoads[routeHash],
+                    onLoadLower = onLoads[routeHashLower];
+
+                // Try to execute the non altered request hash load method
+                if (onLoad) {
+                    onLoad();
+
+                    previousRouteHash = routeHash;
+                    // Try to execute the lower cased request hash load method
+                } else if (onLoadLower) {
+                    onLoadLower();
+
+                    previousRouteHash = routeHashLower;
+                    // Try to execute the regex request hash load method
+                } else {
+                    var match = regexMatch(routeHash);
+
+                    // Non altered regex request hash
+                    if (match.success === true) {
+                        onLoads[match.hash](match.params);
+
+                        previousRouteHash = routeHash;
+                        // Lower cased regex request hash
                     } else {
-                        hash = hash.replace(regexNamedParameters, regexParametersMatchString);
+                        var matchLower = regexMatch(routeHashLower);
 
-                        regexRoutes.push(new object.Route(hash, params));
+                        if (matchLower.success === true) {
+                            onLoads[matchLower.hash](matchLower.params);
+
+                            previousRouteHash = routeHashLower;
+                        } else {
+                            flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
+                        }
                     }
-
-                    return hash;
                 }
+            }
 
-                // #endregion addRegexRoute
+            // #endregion runOnLoad
 
-                // #region buildHash
+            // #region runOnUnload
 
-                /**
-                 * Build the hash to ensure a hashtag/slash prefix
-                 * @param {String} path - The route identifier, must be unique
-                 * @returns {String} The updated hash containing the hashtag/slash prefix
-                 */
-                function buildHash(path) {
-                    // Ensure the path is a string
-                    if (flash.utils.object.isString(path)) {
-                        // Return the path if the hashtag/slash prefix exists
-                        if (path.indexOf(hashPrefix) === 0) {
-                            return path;
-                        }
+            /**
+             * Execute the unload method for the previously requested route hash
+             * @param {String} routeHash - The previously requested route hash
+             */
+            function runOnUnload(routeHash) {
+                var onUnload = onUnloads[routeHash];
 
-                        var hashtag = "#",
-                            hashtagIndex = path.indexOf(hashtag),
-                            slashIndex = path.indexOf("/");
+                // Try to execute request hash unload method
+                if (onUnload) {
+                    onUnload();
+                    // Try to execute the regex request hash unload method
+                } else {
+                    var match = regexMatch(routeHash);
 
-                        // Neither hashtag nor slash exist, prepend to the hash
-                        if (hashtagIndex !== 0 && slashIndex !== 0) {
-                            return hashPrefix + path;
-                        }
-
-                        // hashtag does not exist, but slash exists
-                        if (hashtagIndex !== 0 && slashIndex === 0) {
-                            return hashtag + path;
-                        }
-
-                        // hashtag exists, but slash does not
-                        if (hashtagIndex === 0 && slashIndex !== 1) {
-                            return hashPrefix + path.substring(1);
-                        }
+                    if (match.success) {
+                        onUnloads[match.hash](match.params);
                     }
+                }
+            }
 
-                    log.error("Route path '" + path + "' is not properly formatted.", "routing.buildHash");
+            // #endregion runOnUnload
 
+            // #region toLowerCase
+
+            /**
+             * Lower case the route hash, not incuding the querystring if it exists
+             * @param {String} routeHash - The route hash unique identifier
+             * @returns {String} The route hash in lower case
+             */
+            function toLowerCase(routeHash) {
+                if (!routeHash) {
                     return null;
                 }
 
-                // #endregion buildHash
-
-                // #region getRoute
-
-                /**
-                 * Get the route object containing the unique hash and named params
-                 * @param {String} hash - The unique identifier of the template
-                 * @returns {Object} The route object
-                 */
-                function getRoute(hash) {
-                    // Get the params by name and update the hash if named parameters are present in the querystring
-                    if (hash.indexOf(regexNonNamedParameterString) < 0) {
-                        var params = hash.match(regexNamedParameters),
-                            hasQueryString = hash.indexOf(queryIdentifier) >= 0;
-
-                        if (!params) {
-                            return new object.Route(hash);
-                        }
-
-                        for (var i = 0; i < params.length; i++) {
-                            var param = params[i],
-                                paramName = param.slice(1, -1);
-
-                            if (hasQueryString) {
-                                var queryStringParam = paramName + queryStringNameValueSeparator + param;
-
-                                // Add the name value pair string (name=value) to the hash
-                                hash = hash.replace(param, queryStringParam);
-                            }
-
-                            params[i] = paramName;
-                        }
-
-                        return new object.Route(hash, params);
-                    }
-
-                    return new object.Route(hash);
+                if (application.settings.caseSensitiveRoutes) {
+                    return routeHash;
                 }
 
-                // #endregion getRoute
+                var queryIdentifierIndex = routeHash.indexOf(queryIdentifier),
+                    path = queryIdentifierIndex >= 0 ? routeHash.substr(0, queryIdentifierIndex) : routeHash,
+                    queryString = queryIdentifierIndex >= 0 ? routeHash.substr(queryIdentifierIndex) : "",
+                    routeParts = path.split(routePathDivider);
 
-                // #region regexMatch
-
-                /**
-                 * Match the requested route hash with an existing unique regex hash
-                 * @param {String} routeHash - The requested route hash
-                 * @returns {Object} The match object
-                 */
-                function regexMatch(routeHash) {
-                    for (var i = regexRoutes.length - 1; i >= 0; i--) {
-                        var route = regexRoutes[i],
-                            regExp = new RegExp(route.hash);
-
-                        if (!regExp.test(routeHash)) {
-                            continue;
-                        }
-
-                        log.info(route.hash, "routing.regexMatch");
-
-                        var map,
-                            params = routeHash.match(regExp);
-
-                        // Remove the static part of the hash
-                        params = params.slice(1, params.length);
-
-                        // Get the hashmap of named parameters if they are part of the unique hash
-                        if (route.params) {
-                            map = {};
-
-                            for (var j = 0; j < route.params.length; j++) {
-                                if (!route.params[j] || !params[j]) {
-                                    log.error(
-                                        "Named parameters did not match properly based on route. Please verify the route definition.",
-                                        "routing.regexMatch");
-
-                                    break;
-                                }
-
-                                map[route.params[j]] = params[j];
-                            }
-                        }
-
-                        return new object.Match(true, route.hash, map || params);
+                for (var i = 0; i < routeParts.length; i++) {
+                    // Ignore named parameters to keep case sensitivity
+                    if (routeParts[i].indexOf(namedParameterIdentifier) >= 0) {
+                        continue;
                     }
 
-                    return new object.Match(false);
+                    routeParts[i] = routeParts[i].toLowerCase();
                 }
 
-                // #endregion regexMatch
+                return routeParts.join(routePathDivider) + queryString;
+            }
 
-                // #region runOnLoad
+            // #endregion toLowerCase
 
-                /**
-                 * Execute the load method for the requested route hash
-                 * @param {String} routeHash - The requested route hash
-                 * @param {String} routeHashLower - The requested route hash in lower case form
-                 */
-                function runOnLoad(routeHash, routeHashLower) {
-                    var onLoad = onLoads[routeHash],
-                        onLoadLower = onLoads[routeHashLower];
+            // #endregion Methods
 
-                    // Try to execute the non altered request hash load method
-                    if (onLoad) {
-                        onLoad();
+            // #endregion Private
 
-                        previousRouteHash = routeHash;
-                        // Try to execute the lower cased request hash load method
-                    } else if (onLoadLower) {
-                        onLoadLower();
+            // #region Public
 
-                        previousRouteHash = routeHashLower;
-                        // Try to execute the regex request hash load method
-                    } else {
-                        var match = regexMatch(routeHash);
+            // #region Methods
 
-                        // Non altered regex request hash
-                        if (match.success === true) {
-                            onLoads[match.hash](match.params);
+            // #region addRoute
 
-                            previousRouteHash = routeHash;
-                            // Lower cased regex request hash
-                        } else {
-                            var matchLower = regexMatch(routeHashLower);
+            /**
+             * Add route definition
+             * @param {String} path - The route identifier, must be unique
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} title - The title of page
+             * @param {String} prefix - The prefix for the controller and tab
+             * @param {Boolean} regex - Does the route contain parameters
+             * @param {Boolean} caseSensitive - Is the route case sensitive
+             */
+            self.addRoute = function (path, url, title, prefix, regex, caseSensitive) {
+                var builtHash = buildHash(path);
 
-                            if (matchLower.success === true) {
-                                onLoads[matchLower.hash](matchLower.params);
-
-                                previousRouteHash = routeHashLower;
-                            } else {
-                                flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
-                            }
-                        }
-                    }
+                if (!builtHash) {
+                    return;
                 }
 
-                // #endregion runOnLoad
+                // Assign the appropriate hash, depending on route case sensitivity
+                var hash = caseSensitive ? builtHash : toLowerCase(builtHash),
+                    routeHash = hash;
 
-                // #region runOnUnload
+                // Handle the route if it is a regex
+                if (regex) {
+                    var route = getRoute(hash);
 
-                /**
-                 * Execute the unload method for the previously requested route hash
-                 * @param {String} routeHash - The previously requested route hash
-                 */
-                function runOnUnload(routeHash) {
-                    var onUnload = onUnloads[routeHash];
+                    routeHash = route.hash;
 
-                    // Try to execute request hash unload method
-                    if (onUnload) {
-                        onUnload();
-                        // Try to execute the regex request hash unload method
-                    } else {
-                        var match = regexMatch(routeHash);
-
-                        if (match.success) {
-                            onUnloads[match.hash](match.params);
-                        }
-                    }
+                    hash = addRegexRoute(route.hash, route.params);
                 }
 
-                // #endregion runOnUnload
+                addOnLoad(hash, routeHash, url, title, prefix);
+                addOnUnload(hash, routeHash);
+            };
 
-                // #region toLowerCase
+            // #endregion addRoute
 
-                /**
-                 * Lower case the route hash, not incuding the querystring if it exists
-                 * @param {String} routeHash - The route hash unique identifier
-                 * @returns {String} The route hash in lower case
-                 */
-                function toLowerCase(routeHash) {
-                    if (!routeHash) {
-                        return null;
-                    }
+            // #region listener
 
-                    if (application.settings.caseSensitiveRoutes) {
-                        return routeHash;
-                    }
+            /**
+             * Listener to be executed when hashchange event is fired
+             */
+            self.listener = function () {
+                var routeHash = window.location.hash;
 
-                    var queryIdentifierIndex = routeHash.indexOf(queryIdentifier),
-                        path = queryIdentifierIndex >= 0 ? routeHash.substr(0, queryIdentifierIndex) : routeHash,
-                        queryString = queryIdentifierIndex >= 0 ? routeHash.substr(queryIdentifierIndex) : "",
-                        routeParts = path.split(routePathDivider);
-
-                    for (var i = 0; i < routeParts.length; i++) {
-                        // Ignore named parameters to keep case sensitivity
-                        if (routeParts[i].indexOf(namedParameterIdentifier) >= 0) {
-                            continue;
-                        }
-
-                        routeParts[i] = routeParts[i].toLowerCase();
-                    }
-
-                    return routeParts.join(routePathDivider) + queryString;
+                if (!routeHash) {
+                    routeHash = hashPrefix;
                 }
 
-                // #endregion toLowerCase
+                var routeHashLower = toLowerCase(routeHash);
 
-                // #endregion Methods
+                runOnUnload(previousRouteHash);
+                runOnLoad(routeHash, routeHashLower);
+            };
 
-                // #endregion Private
+            // #endregion listener
 
-                // #region Public
+            // #region redirect
 
-                // #region Methods
+            /**
+             * Redirect the window to the new path
+             * @param {String} path - The route identifier to load
+             */
+            self.redirect = function (path) {
+                var builtHash = buildHash(path),
+                    builtHashLower = toLowerCase(builtHash);
 
-                // #region addRoute
+                if (!builtHash) {
+                    return;
+                }
 
-                /**
-                 * Add route definition
-                 * @param {String} path - The route identifier, must be unique
-                 * @param {String} url - The url of the view (html) to load
-                 * @param {String} title - The title of page
-                 * @param {String} prefix - The prefix for the controller and tab
-                 * @param {Boolean} regex - Does the route contain parameters
-                 * @param {Boolean} caseSensitive - Is the route case sensitive
-                 */
-                self.addRoute = function (path, url, title, prefix, regex, caseSensitive) {
-                    var builtHash = buildHash(path);
+                window.location.hash = builtHash;
 
-                    if (!builtHash) {
-                        return;
-                    }
-
-                    // Assign the appropriate hash, depending on route case sensitivity
-                    var hash = caseSensitive ? builtHash : toLowerCase(builtHash),
-                        routeHash = hash;
-
-                    // Handle the route if it is a regex
-                    if (regex) {
-                        var route = getRoute(hash);
-
-                        routeHash = route.hash;
-
-                        hash = addRegexRoute(route.hash, route.params);
-                    }
-
-                    addOnLoad(hash, routeHash, url, title, prefix);
-                    addOnUnload(hash, routeHash);
-                };
-
-                // #endregion addRoute
-
-                // #region listener
-
-                /**
-                 * Listener to be executed when hashchange event is fired
-                 */
-                self.listener = function () {
-                    var routeHash = window.location.hash;
-
-                    if (!routeHash) {
-                        routeHash = hashPrefix;
-                    }
-
-                    var routeHashLower = toLowerCase(routeHash);
-
+                if (previousRouteHash == builtHash || previousRouteHash == builtHashLower) {
                     runOnUnload(previousRouteHash);
-                    runOnLoad(routeHash, routeHashLower);
-                };
+                    runOnLoad(builtHash, builtHashLower);
+                }
+            };
 
-                // #endregion listener
+            // #endregion redirect
 
-                // #region redirect
+            // #endregion Methods
 
-                /**
-                 * Redirect the window to the new path
-                 * @param {String} path - The route identifier to load
-                 */
-                self.redirect = function (path) {
-                    var builtHash = buildHash(path);
+            // #endregion Public
 
-                    if (!builtHash) {
-                        return;
-                    }
-
-                    window.location.hash = builtHash;
-                };
-
-                // #endregion redirect
-
-                // #endregion Methods
-
-                // #endregion Public
-
-                return self;
-            })();
+            return self;
+        })();
 
         // #endregion routing
 
