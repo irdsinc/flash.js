@@ -2475,6 +2475,28 @@
 
             // #endregion clearTemplates
 
+            // #region cloneObject
+
+            /**
+             * Method to clone object b into object a, with support for knockoutjs observables
+             * @param {Object} a - The object to clone into
+             * @param {Object} b - The object to clone from
+             * @returns
+             */
+            self.cloneObject = function (a, b) {
+                for (var item in b) {
+                    if (b.hasOwnProperty(item)) {
+                        if (a.hasOwnProperty(item) != null && ko.isObservable(a[item])) {
+                            a[item](b[item]);
+                        } else {
+                            a[item] = b[item];
+                        }
+                    }
+                }
+            };
+
+            // #endregion cloneObject
+
             // #region convertObjectToQueryStringParamArray
 
             /**
