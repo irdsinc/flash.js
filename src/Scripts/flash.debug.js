@@ -439,18 +439,6 @@
 
             // #endregion loadedResources
 
-            // #region modalHiddenEventName
-
-                modalHiddenEventName = "hidden.bs.modal",
-
-            // #endregion modalHiddenEventName
-
-            // #region modalShowEventName
-
-                modalShownEventName = "shown.bs.modal",
-
-            // #endregion modalShowEventName
-
             // #region responseStatuses
 
                 responseStatuses = { ERROR: "Error", SUCCESS: "Success", WARNING: "Warning" },
@@ -531,7 +519,7 @@
 
                 // Check to make sure to page loading is active
                 if (application.settings.showPageLoading) {
-                    self.removePageLoading();
+                    self.hidePageLoading();
                 }
             }
 
@@ -578,8 +566,6 @@
             function displayModalTemplate(template, preparedHtml, params) {
                 var $modal = $(preparedHtml);
 
-                $modal.modal();
-
                 // Hide the modal when a hashchange event fires
                 hashchange.bind(function () {
                     $modal.modal("hide");
@@ -611,15 +597,17 @@
 
                     // Check to make sure to page loading is active
                     if (application.settings.showPageLoading) {
-                        self.removePageLoading();
+                        self.hidePageLoading();
                     }
 
                     // Unbind the shown/hidden events from the modal
-                    $modal.off(modalShownEventName + "," + modalHiddenEventName);
+                    $modal.off(application.settings.modalShownEventName + "," + application.settings.modalHiddenEventName);
 
                     // Remove the modal from the DOM
                     $modal.remove();
                 });
+
+                $modal.modal();
             }
 
             // #endregion displayModalTemplate
@@ -781,8 +769,11 @@
              * Display the page loading element on the view
              */
             self.displayPageLoading = function () {
-                // Check to make sure to page loading is active
-                if (!application.settings.showPageLoading) {
+                var $pageLoading = $("." + application.settings.pageLoadingClassName);
+
+                if ($pageLoading.length) {
+                    $pageLoading.show();
+
                     return;
                 }
 
@@ -798,6 +789,27 @@
             };
 
             // #endregion displayPageLoading
+
+            // #region hidePageLoading
+
+            /**
+             * Hide the page loading element from the view
+             */
+            self.hidePageLoading = function () {
+                // Check to make sure to page loading is active
+                if (!application.settings.showPageLoading) {
+                    return;
+                }
+
+                var $pageLoading = $("." + application.settings.pageLoadingClassName);
+
+                // Hide the page loading element if it exists
+                if ($pageLoading.length) {
+                    $pageLoading.hide();
+                }
+            };
+
+            // #endregion hidePageLoading
 
             // #region loadModalTemplate
 
@@ -836,27 +848,6 @@
             };
 
             // #endregion loadPageTemplate
-
-            // #region removePageLoading
-
-            /**
-             * Remove the page loading element from the view
-             */
-            self.removePageLoading = function () {
-                // Check to make sure to page loading is active
-                if (!application.settings.showPageLoading) {
-                    return;
-                }
-
-                var $loading = $("." + application.settings.pageLoadingClassName);
-
-                // Remove the page loading element if it exists
-                if ($loading.length) {
-                    $loading.remove();
-                }
-            };
-
-            // #endregion removePageLoading
 
             // #region setDocumentTitle
 
@@ -2417,14 +2408,14 @@
 
             // #region Methods
 
-            // #region removePageLoading
+            // #region hidePageLoading
 
             /**
              * Remove the page loading element from the view
              */
-            self.removePageLoading = templating.removePageLoading;
+            self.hidePageLoading = templating.hidePageLoading;
 
-            // #endregion removePageLoading
+            // #endregion hidePageLoading
 
             // #region displayPageLoading
 
