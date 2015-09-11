@@ -2488,28 +2488,6 @@
 
             // #endregion clearTemplates
 
-            // #region cloneObject
-
-            /**
-             * Method to clone object b into object a, with support for knockoutjs observables
-             * @param {Object} a - The object to clone into
-             * @param {Object} b - The object to clone from
-             * @returns
-             */
-            self.cloneObject = function (a, b) {
-                for (var item in b) {
-                    if (b.hasOwnProperty(item)) {
-                        if (a.hasOwnProperty(item) != null && ko.isObservable(a[item])) {
-                            a[item](b[item]);
-                        } else {
-                            a[item] = b[item];
-                        }
-                    }
-                }
-            };
-
-            // #endregion cloneObject
-
             // #region convertObjectToQueryStringParamArray
 
             /**
@@ -2565,6 +2543,32 @@
             };
 
             // #endregion displayMessagePage
+
+            // #region extend
+
+            /**
+             * Method to extend the target object with objects from source, with support for KnockoutJS observables
+             * @param {Object} target - The target object
+             * @param {Object} source - The source object
+             * @returns {Object} The target object
+             */
+            self.extend = function (target, source) {
+                target = target || {};
+
+                for (var prop in source) {
+                    if (ko.isObservable(target[prop])) {
+                        target[prop](source[prop]);
+                    } else if (typeof source[prop] === "object") {
+                        target[prop] = extend(target[prop], source[prop]);
+                    } else {
+                        target[prop] = source[prop];
+                    }
+                }
+
+                return target;
+            };
+
+            // #endregion extend
 
             // #region getQueryString
 
