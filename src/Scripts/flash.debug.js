@@ -343,20 +343,24 @@
 
             /**
              * The Template object constructor
-             * @param {String} hash - The unique identifier of the template
-             * @param {Number} type - The template type
-             * @param {String} prefix - The prefix used for the controller and tab objects
-             * @param {String} title - The template title used for the document title
-             * @param {Function} callback - The function that is executed when the template is loaded
+             * @param {Object} config - The object containing the template config settings
+             *      @param {Function} callback - The function that is executed when the template is loaded
+             *      @param {String} containerElementSelector - The container element selector used to prepend the template to
+             *      @param {String} hash - The unique identifier of the template
+             *      @param {Object} params - The object containing the parameters
+             *      @param {String} prefix - The prefix used for the controller and tab objects
+             *      @param {String} title - The template title used for the document title
+             *      @param {Number} type - The template type
              */
-            self.Template = function (hash, type, prefix, title, callback) {
-                this.hash = hash;
-                this.type = type;
-                this.controller = buildControllerName(prefix);
-                this.tab = buildTabName(prefix);
-                this.title = buildObjectName(title);
-                this.callback = callback;
+            self.Template = function (config) {
+                this.callback = config.callback;
+                this.containerElementSelector = config.containerElementSelector;
+                this.controller = buildControllerName(config.prefix);
+                this.hash = config.hash;
                 this.html = null;
+                this.tab = buildTabName(config.prefix);
+                this.title = buildObjectName(config.title);
+                this.type = config.type;
             };
 
             // #endregion Template
@@ -447,16 +451,9 @@
 
             // #region templates
 
-                templates = [],
+                templates = [];
 
             // #endregion templates
-
-            // #region templateTypes
-
-                // TODO: consider moving to flash.templateTypes
-                templateTypes = { PAGE: 0, MODAL: 1 };
-
-            // #endregion templateTypes
 
             // #endregion Objects
 
@@ -540,22 +537,37 @@
 
             // #endregion runAfterUnload
 
-            // #region setActiveTab
+            // #region display
 
             /**
-             * Set the application active tab and update the view with the active tab
-             * @param {String} tab - The active tab object name
+             * Inject the template into the DOM and scroll to the container element
+             * @param {Object} template - The template object
+             * @param {String} preparedHtml - The HTML string of the template to load
+             * @param {Object} params - The object containing the parameters
+             * @param {Function} callback - The function containing addtional steps for loading template
              */
-            function setActiveTab(tab) {
-                application.activeTab = tab;
+            function display(template, preparedHtml, params, callback) {
+                var $templateContainerElement = $(template.containerElementSelector);
 
-                $("[tab-name]").removeClass(activeClassName);
-                $("[tab-name*='" + tab + "']").addClass(activeClassName);
+                // Set the view to the prepared HTML string
+                $templateContainerElement.html(preparedHtml);
+
+                if (flash.utils.object.isFunction(callback)) {
+                    callback();
+                }
+
+                flash.utils.scrollTo(flash.$parentElement, $templateContainerElement);
+
+                if (flash.utils.object.isFunction(template.callback)) {
+                    template.callback();
+                }
+
+                runAfterLoad(template.type, params);
             }
 
-            // #endregion setActiveTab
+            // #endregion display
 
-            // #region displayModalTemplate
+            // #region displayModal
 
             /**
              * Inject the modal template into the DOM and bind shown/hidden modal events
@@ -563,7 +575,7 @@
              * @param {String} preparedHtml - The HTML string of the template to load
              * @param {Object} params - The object containing the parameters
              */
-            function displayModalTemplate(template, preparedHtml, params) {
+            function displayModal(template, preparedHtml, params) {
                 var $modal = $(preparedHtml);
 
                 // Hide the modal when a hashchange event fires
@@ -610,43 +622,16 @@
                 $modal.modal();
             }
 
-            // #endregion displayModalTemplate
+            // #endregion displayModal
 
-            // #region displayPageTemplate
-
-            /**
-             * Inject the page template into the DOM and scroll to the top of the document
-             * @param {Object} template - The template object
-             * @param {String} preparedHtml - The HTML string of the template to load
-             * @param {Object} params - The object containing the parameters
-             */
-            function displayPageTemplate(template, preparedHtml, params) {
-                self.setDocumentTitle(template.title);
-
-                // Set the view to the prepared HTML string
-                flash.$templateContainerElement.html(preparedHtml);
-
-                setActiveTab(template.tab);
-
-                flash.utils.scrollTo(flash.$parentElement, flash.$templateContainerElement);
-
-                if (flash.utils.object.isFunction(template.callback)) {
-                    template.callback();
-                }
-
-                runAfterLoad(template.type, params);
-            }
-
-            // #endregion displayPageTemplate
-
-            // #region getTemplate
+            // #region get
 
             /**
              * Try to find the template in the client browser session
              * @param {String} hash - The unique identifier of the template
              * @returns {Object} The template object 
              */
-            function getTemplate(hash) {
+            function get(hash) {
                 for (var i = 0; i < templates.length; i++) {
                     if (hash === templates[i].hash) {
                         return templates[i];
@@ -656,38 +641,7 @@
                 return null;
             }
 
-            // #endregion getTemplate
-
-            // #region getModalTemplate
-
-            /**
-             * Get the modal template object
-             * @param {String} hash - The unique identifier of the template
-             * @param {String} prefix - The prefix used for the controller and tab objects
-             * @param {Function} callback - The function that is executed when the template is loaded
-             * @returns
-             */
-            function getModalTemplate(hash, prefix, callback) {
-                return new object.Template(hash, templateTypes.MODAL, prefix, null, callback);
-            }
-
-            // #endregion getModalTemplate
-
-            // #region getPageTemplate
-
-            /**
-             * Get the page template object
-             * @param {String} hash - The unique identifier of the template
-             * @param {String} prefix - The prefix used for the controller and tab objects
-             * @param {String} title - The template title used for the document title
-             * @param {Function} callback - The function that is executed when the template is loaded
-             * @returns
-             */
-            function getPageTemplate(hash, prefix, title, callback) {
-                return new object.Template(hash, templateTypes.PAGE, prefix, title, callback);
-            }
-
-            // #endregion getPageTemplate
+            // #endregion get
 
             // #region isResourceLoaded
 
@@ -702,37 +656,68 @@
 
             // #endregion isResourceLoaded
 
-            // #region loadTemplate
+            // #region load
 
             /**
              * Load the template for the supplied hash from client browser session or request new template
-             * @param {String} hash - The unique identifier of the template
-             * @param {Object} params - The object containing the parameters
-             * @param {String} url - The url of the view (html) to load
-             * @param {String} title - The template title used for the document title
-             * @param {String} prefix - The prefix used for the controller and tab objects
-             * @param {Number} type - The template type
-             * @param {Function} callback - The function that is executed when the template is loaded
+             * @param {Object} config - The object containing the template config settings
+             *      @param {Function} callback - The function that is executed when the template is loaded
+             *      @param {String} containerElementSelector - The container element selector used to prepend the template to
+             *      @param {String} hash - The unique identifier of the template
+             *      @param {Object} params - The object containing the parameters
+             *      @param {String} prefix - The prefix used for the controller and tab objects
+             *      @param {String} title - The template title used for the document title
+             *      @param {Number} type - The template type
+             *      @param {String} url - The url of the view (html) to load
              */
-            function loadTemplate(hash, params, url, title, prefix, type, callback) {
-                var template = getTemplate(hash);
+            function load(config) {
+                if (!flash.utils.object.isObject(config)) {
+                    log.error("config is not set.", "templating.load");
 
-                log.info(hash, "templating.loadTemplate");
+                    return;
+                }
+
+                if (!flash.utils.object.isNumber(config.type)) {
+                    log.error("config.type is not set.", "templating.load");
+
+                    return;
+                }
+
+                if (!flash.utils.object.isString(config.hash)) {
+                    log.error("config.hash is not set.", "templating.load");
+
+                    return;
+                }
+
+                if (!flash.utils.object.isString(config.url)) {
+                    log.error("config.url is not set.", "templating.load");
+
+                    return;
+                }
+
+                if (!flash.utils.object.isString(config.containerElementSelector) &&
+                    (config.type == self.types.PAGE || config.type == self.types.PARTIAL)) {
+                    log.error("config.containerElementSelector is not set.", "templating.load");
+
+                    return;
+                }
+
+                log.info(config.hash, "templating.load");
+
+                var template = get(config.hash);
 
                 if (template) {
-                    template.init(params);
+                    template.init(config.params);
                 } else {
-                    log.info("new " + hash, "templating.loadTemplate");
+                    log.info("new " + config.hash, "templating.load");
 
-                    template = type === templateTypes.PAGE
-                        ? getPageTemplate(hash, prefix, title, callback)
-                        : getModalTemplate(hash, prefix, callback);
+                    template = new object.Template(config);
 
-                    template.request(url, params);
+                    template.request(config.url, config.params);
                 }
             }
 
-            // #endregion loadTemplate
+            // #endregion load
 
             // #endregion Methods
 
@@ -742,11 +727,11 @@
 
             // #region Objects
 
-            // #region templateTypes
+            // #region types
 
-            self.templateTypes = templateTypes;
+            self.types = { PAGE: 0, MODAL: 1, PARTIAL: 2 };
 
-            // #endregion templateTypes
+            // #endregion types
 
             // #endregion Objects
 
@@ -811,7 +796,7 @@
 
             // #endregion hidePageLoading
 
-            // #region loadModalTemplate
+            // #region loadModal
 
             /**
              * Load the modal template
@@ -821,18 +806,27 @@
              * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
-            self.loadModalTemplate = function (hash, url, prefix, params, callback) {
+            self.loadModal = function (hash, url, prefix, params, callback) {
                 // Check to make sure to page loading is active
                 if (application.settings.showPageLoading) {
                     self.displayPageLoading();
                 }
 
-                loadTemplate(hash, params, url, null, prefix, templateTypes.MODAL, callback);
+                var config = {
+                    callback: callback,
+                    hash: hash,
+                    params: params,
+                    prefix: prefix,
+                    type: self.types.MODAL,
+                    url: url
+                };
+
+                load(config);
             };
 
-            // #endregion loadModalTemplate
+            // #endregion loadModal
 
-            // #region loadPageTemplate
+            // #region loadPage
 
             /**
              * Load the page template
@@ -843,11 +837,62 @@
              * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
-            self.loadPageTemplate = function (hash, url, title, prefix, params, callback) {
-                loadTemplate(hash, params, url, title, prefix, templateTypes.PAGE, callback);
+            self.loadPage = function (hash, url, title, prefix, params, callback) {
+                var config = {
+                    containerElementSelector: application.settings.templateContainerElementSelector,
+                    hash: hash,
+                    params: params,
+                    prefix: prefix,
+                    title: title,
+                    type: self.types.PAGE,
+                    url: url
+                };
+
+                load(config);
             };
 
-            // #endregion loadPageTemplate
+            // #endregion loadPage
+
+            // #region loadPartial
+
+            /**
+             * Load the partial templatetemplate
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} containerElementSelector - The container element selector used to prepend the template to
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Object} params - The object containing the parameters
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            self.loadPartial = function (hash, url, containerElementSelector, prefix, params, callback) {
+                var config = {
+                    containerElementSelector: containerElementSelector,
+                    hash: hash,
+                    params: params,
+                    prefix: prefix,
+                    type: self.types.PARTIAL,
+                    url: url
+                };
+
+                load(config);
+            };
+
+            // #endregion loadPartial
+
+            // #region setActiveTab
+
+            /**
+             * Set the application active tab and update the view with the active tab
+             * @param {String} tab - The active tab object name
+             */
+            self.setActiveTab = function (tab) {
+                application.activeTab = tab;
+
+                $("[tab-name]").removeClass(activeClassName);
+                $("[tab-name*='" + tab + "']").addClass(activeClassName);
+            };
+
+            // #endregion setActiveTab
 
             // #region setDocumentTitle
 
@@ -863,21 +908,21 @@
 
             // #endregion setDocumentTitle
 
-            // #region unloadTemplate
+            // #region unload
 
             /**
              * Run clean up right before and/or after the template has been unloaded
              * @param {String} hash - The unique identifier of the template
              * @param {Object} params - The object containing the parameters
              */
-            self.unloadTemplate = function (hash, params) {
-                var template = getTemplate(hash);
+            self.unload = function (hash, params) {
+                var template = get(hash);
 
                 // Ensure we have a template object
                 if (!template) {
                     log.warning(
                         "Template was not found for route hash '" + hash + "', therefore, unload was skipped.",
-                        "templating.unloadTemplate");
+                        "templating.unload");
 
                     return;
                 }
@@ -902,7 +947,7 @@
                 runAfterUnload(template.type, params);
             };
 
-            // #endregion unloadTemplate
+            // #endregion unload
 
             // #region object.Template.prototype.add
 
@@ -934,10 +979,13 @@
                     application.settings.beforeLoad(template.type, preparedHtml, params);
                 }
 
-                if (template.type === templateTypes.PAGE) {
-                    displayPageTemplate(template, preparedHtml, params);
+                if (template.type === self.types.MODAL) {
+                    displayModal(template, preparedHtml, params);
                 } else {
-                    displayModalTemplate(template, preparedHtml, params);
+                    display(template, preparedHtml, params, template.type === self.types.PARTIAL ? null : function () {
+                        self.setDocumentTitle(template.title);
+                        self.setActiveTab(template.tab);
+                    });
                 }
             };
 
@@ -1267,7 +1315,7 @@
              */
             function addOnLoad(hash, routeHash, url, title, prefix) {
                 onLoads[hash] = function (params) {
-                    templating.loadPageTemplate(routeHash, url, title, prefix, params);
+                    templating.loadPage(routeHash, url, title, prefix, params);
                 };
             }
 
@@ -1282,7 +1330,7 @@
              */
             function addOnUnload(hash, routeHash) {
                 onUnloads[hash] = function (params) {
-                    templating.unloadTemplate(routeHash, params);
+                    templating.unload(routeHash, params);
                 };
             }
 
@@ -2157,15 +2205,8 @@
                         return;
                     }
 
-                    // If the response object did not contain the Path string, display the error based on the HTTP Verb
-                    switch (httpVerb) {
-                        case verbs.DELETE:
-                        case verbs.POST:
-                        case verbs.PUT:
-                            flash.alert.dangerDefault();
-                        default:
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
-                    }
+                    // If the response object did not contain the Path string, redirect to the error page
+                    flash.utils.displayErrorPage(application.resources.errorMessages.DEFAULT);
                 } catch (e) {
                     log.error(e, "flash.http.triggerRedirect");
 
@@ -2400,13 +2441,31 @@
 
             // #region types
 
-            self.types = templating.templateTypes;
+            self.types = templating.types;
 
             // #endregion types
 
             // #endregion Objects
 
             // #region Methods
+
+            // #region clear
+
+            /**
+             * Clear the client browser session templates
+             */
+            self.clear = templating.clear;
+
+            // #endregion clear
+
+            // #region displayPageLoading
+
+            /**
+             * Display the page loading element on the view
+             */
+            self.displayPageLoading = templating.displayPageLoading;
+
+            // #endregion displayPageLoading
 
             // #region hidePageLoading
 
@@ -2417,14 +2476,87 @@
 
             // #endregion hidePageLoading
 
-            // #region displayPageLoading
+            // #region load
 
             /**
-             * Display the page loading element on the view
+             * Load the template for the supplied hash from client browser session or request new template
+             * @param {Object} config - The object containing the template config settings
+             *      @param {Function} callback - The function that is executed when the template is loaded
+             *      @param {String} containerElementSelector - The container element selector used to prepend the template to
+             *      @param {String} hash - The unique identifier of the template
+             *      @param {Object} params - The object containing the parameters
+             *      @param {String} prefix - The prefix used for the controller and tab objects
+             *      @param {String} title - The template title used for the document title
+             *      @param {Number} type - The template type
+             *      @param {String} url - The url of the view (html) to load
              */
-            self.displayPageLoading = templating.displayPageLoading;
+            self.load = templating.load;
 
-            // #endregion displayPageLoading
+            // #endregion load
+
+            // #region loadModal
+
+            /**
+             * Load the modal template
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Object} params - The object containing the parameters
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            self.loadModal = templating.loadModal;
+
+            // #endregion loadModal
+
+            // #region loadPage
+
+            /**
+             * Load the page template
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} title - The template title used for the document title
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Object} params - The object containing the parameters
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            self.loadPage = templating.loadPage;
+
+            // #endregion loadPage
+
+            // #region loadPartial
+
+            /**
+             * Load the partial template
+             * @param {String} hash - The unique identifier of the template
+             * @param {String} url - The url of the view (html) to load
+             * @param {String} containerElementSelector - The container element selector used to prepend the template to
+             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {Object} params - The object containing the parameters
+             * @param {Function} callback - The function that is executed when the template is loaded
+             */
+            self.loadPartial = templating.loadPartial;
+
+            // #endregion loadPartial
+
+            // #region setActiveTab
+
+            /**
+             * Set the application active tab and update the view with the active tab
+             * @param {String} tab - The active tab object name
+             */
+            self.setActiveTab = templating.setActiveTab;
+
+            // #endregion setActiveTab
+
+            // #region setDocumentTitle
+
+            /**
+             * Set the document title
+             * @param {string} pagetTitle - The title of the template page that has been loaded
+             */
+            self.setDocumentTitle = templating.setDocumentTitle;
+
+            // #endregion setDocumentTitle
 
             // #endregion Methods
 
@@ -2702,6 +2834,10 @@
              * Clear the client browser session templates
              */
             self.clearTemplates = function () {
+                log.depreciated(
+                    "This method is depreciated and will be removed in version 2.0. Please use flash.template.clear() instead.",
+                    "flash.utils.clearTemplates");
+
                 templating.clear();
             };
 
@@ -2879,7 +3015,13 @@
              * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
-            self.loadModal = templating.loadModalTemplate;
+            self.loadModal = function (hash, url, prefix, params, callback) {
+                log.depreciated(
+                    "This method is depreciated and will be removed in version 2.0. Please use flash.template.loadModal() instead.",
+                    "flash.utils.loadModal");
+
+                templating.loadModal(hash, url, prefix, params, callback);
+            };
 
             // #endregion loadModal
 
@@ -2894,7 +3036,13 @@
              * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
-            self.loadPage = templating.loadPageTemplate;
+            self.loadPage = function (hash, url, prefix, params, callback) {
+                log.depreciated(
+                    "This method is depreciated and will be removed in version 2.0. Please use flash.template.loadPage() instead.",
+                    "flash.utils.loadPage");
+
+                templating.loadPage(hash, url, prefix, params, callback);
+            };
 
             // #endregion loadPage
 
@@ -3001,7 +3149,13 @@
              * Set the document title
              * @param {string} pagetTitle - The title of the template page that has been loaded
              */
-            self.setDocumentTitle = templating.setDocumentTitle;
+            self.setDocumentTitle = function (pagetTitle) {
+                log.depreciated(
+                    "This method is depreciated and will be removed in version 2.0. Please use flash.template.setDocumentTitle() instead.",
+                    "flash.utils.setDocumentTitle");
+
+                templating.setDocumentTitle(pagetTitle);
+            }
 
             // #endregion setDocumentTitle
 
