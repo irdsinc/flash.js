@@ -530,6 +530,15 @@
              * @param {Object} params - The object containing the parameters
              */
             function runAfterUnload(type, params) {
+                // Hide mobile nav after page unload
+                var $nav = $(".navbar-collapse");
+
+                if ($nav.hasClass("in")) {
+                    $nav.removeClass("in");
+                    $nav.attr("aria-expanded", false);
+                    $nav.height(1);
+                }
+
                 if (flash.utils.object.isFunction(application.settings.afterUnload)) {
                     application.settings.afterUnload(type, params);
                 }
