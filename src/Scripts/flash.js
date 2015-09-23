@@ -408,7 +408,7 @@
                 flash.utils.scrollTo(flash.$parentElement, $templateContainerElement);
 
                 if (flash.utils.object.isFunction(template.callback)) {
-                    template.callback();
+                    template.callback(true);
                 }
 
                 runAfterLoad(template.type, params);
@@ -745,6 +745,10 @@
                 // Check if pre-defined before unload function is still a function and run it in case it was overloaded by user
                 if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
                     application.settings.beforeUnload(template.type, params);
+                }
+
+                if (flash.utils.object.isFunction(template.callback)) {
+                    template.callback(false);
                 }
 
                 // Check to make sure template controller has an unload before running the unload function
