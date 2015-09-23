@@ -2134,10 +2134,10 @@
             // #region verbs
 
                 verbs = {
-                    DELETE: 0,
-                    GET: 1,
-                    POST: 2,
-                    PUT: 3
+                    DELETE: "DELETE",
+                    GET: "GET",
+                    POST: "POST",
+                    PUT: "PUT"
                 };
 
             // #endregion verbs
@@ -2206,15 +2206,175 @@
                     }
 
                     // If the response object did not contain the Path string, redirect to the error page
-                    flash.utils.displayErrorPage(application.resources.errorMessages.DEFAULT);
+                    flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
                 } catch (e) {
                     log.error(e, "flash.http.triggerRedirect");
 
-                    flash.alert.dangerDefault();
+                    flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
                 }
             }
 
             // #endregion triggerRedirect
+
+            // #region ajax
+
+            /**
+             * Create and execute an HTTP request and return the jqXHR object
+             * @param {String} verb - The HTTP Verb of the request
+             * @param {String} url - The URL to which the request is sent
+             * @param {Function} callback - The function that is executed when the request completes
+             * @param {(Object|String)} obj - A plain object or string that is sent to the server with the request
+             * @param {String} elementSelector - The form element selector
+             */
+            function ajax(verb, url, callback, obj, elementSelector) {
+                var config = { url: url, method: verb };
+
+                // Configure HTTP request based on verb
+                if (verb === verbs.DELETE || verb === verbs.GET) {
+                    config.cache = false;
+                    config.async = false;
+                }
+                else if (verb === verbs.POST || verb === verbs.PUT) {
+                    config.data = obj;
+                }
+
+                // Send and handle HTTP request
+                return $.ajax(config)
+                    .done(function (data, textStatus, jqXhr) {
+                        doneCallback(verb, data, textStatus, jqXhr, callback, elementSelector);
+                    })
+                    .fail(function (jqXhr, textStatus, errorThrown) {
+                        failCallback(verb, jqXhr, textStatus, errorThrown, callback, elementSelector);
+                    })
+                    .always(function (jqXhr, textStatus) {
+                        alwaysCallback(verb, jqXhr, textStatus, elementSelector);
+                    });
+            }
+
+            // #endregion ajax
+
+            // #region doneCallback
+
+            /**
+             * The fucntion executed when the HTTP request succeeds
+             * @param {String} verb - The HTTP Verb of the request
+             * @param {*} data - A virtual type object that is returned from the server
+             * @param {String} textStatus - A string describing the status of the request
+             * @param {Object} jqXhr - The XMLHttpRequest object
+             * @param {Function} callback - The function that is executed when the request finishes
+             * @param {String} elementSelector - The form element selector
+             */
+            function doneCallback(verb, data, textStatus, jqXhr, callback, elementSelector) {
+                logAjaxStatus(textStatus, verb.toLowerCase());
+
+                if (verb === verbs.POST || verb === verbs.PUT) {
+                    // Reset the alerts and validation before handling the success 
+                    flash.alert.reset();
+                    flash.utils.resetValidation(elementSelector);
+                }
+
+                if (flash.utils.object.isFunction(callback)) {
+                    callback(data);
+                }
+            }
+
+            // #endregion doneCallback
+
+            // #region failCallback
+
+            /**
+             * The fucntion executed when the HTTP request fails
+             * @param {String} verb - The HTTP Verb of the request
+             * @param {Object} jqXhr - The XMLHttpRequest object
+             * @param {String} textStatus - A string describing the status of the request
+             * @param {String} errorThrown - A string describing the type of error that occurred
+             * @param {Function} callback - The function that is executed when the request finishes
+             * @param {String} elementSelector - The form element selector
+             */
+            function failCallback(verb, jqXhr, textStatus, errorThrown, callback, elementSelector) {
+                logAjaxStatus(textStatus, verb.toLowerCase(), errorThrown);
+
+                if (verb === verbs.POST || verb === verbs.PUT) {
+                    // Reset the alerts and validation before handling the error 
+                    flash.alert.reset();
+                    flash.utils.resetValidation(elementSelector);
+                }
+
+                // Handle the error based on the returned status code
+                if (jqXhr.status === statusCodes.REDIRECT) {
+                    triggerRedirect(jqXhr.responseText);
+                } else if (jqXhr.status === statusCodes.BADREQUEST && (verb === verbs.POST || verb === verbs.PUT)) {
+                    displayFormErrors(elementSelector, jqXhr.responseText);
+                } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
+                    if (verb === verbs.POST || verb === verbs.PUT) {
+                        flash.alert.danger(flash.resources.errorMessages.UNAUTHORIZED);
+                    } else {
+                        flash.utils.displayErrorPage(flash.resources.errorMessages.UNAUTHORIZED);
+                    }
+                } else if (jqXhr.status === statusCodes.FORBIDDEN) {
+                    flash.utils.displayErrorPage(flash.resources.errorMessages.FORBIDDEN);
+                } else if (jqXhr.status === statusCodes.NOTFOUND) {
+                    flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
+                } else {
+                    if (verb === verbs.POST || verb === verbs.PUT) {
+                        flash.alert.dangerDefault();
+                    } else {
+                        flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
+                    }
+                }
+
+                templating.clear();
+
+                if ((verb === verbs.POST || verb === verbs.PUT) && flash.utils.object.isFunction(callback)) {
+                    callback();
+                }
+            }
+
+            // #endregion failCallback
+
+            // #region alwaysCallback
+
+            /**
+             * The fucntion executed when the HTTP request finishes
+             * @param {String} verb - The HTTP Verb of the request
+             * @param {Object} jqXhr - The XMLHttpRequest object
+             * @param {String} textStatus - A string describing the status of the request
+             * @param {String} elementSelector - The form element selector
+             */
+            function alwaysCallback(verb, jqXhr, textStatus, elementSelector) {
+                if (verb === verbs.DELETE || verb === verbs.GET) {
+                    return;
+                }
+
+                logAjaxStatus(textStatus, verb.toLowerCase());
+
+                if (jqXhr.status !== statusCodes.REDIRECT && jqXhr.status !== statusCodes.FORBIDDEN) {
+                    flash.utils.toggleSubmitButton(elementSelector);
+                }
+            }
+
+            // #endregion alwaysCallback
+
+            // #region logAjaxStatus
+
+            /**
+             * The fucntion executed when the HTTP request finishes
+             * @param {String} textStatus - A string describing the status of the request
+             * @param {String} functionName - The name of the calling function
+             * @param {String} errorThrown - A string describing the type of error that occurred
+             */
+            function logAjaxStatus(textStatus, functionName, errorThrown) {
+                var statusMessage = "Status: " + textStatus;
+                var location = "flash.http." + functionName;
+
+                if (flash.utils.object.isString(errorThrown)) {
+                    log.error(statusMessage + ", Error: " + errorThrown, location);
+                } else {
+                    log.info(statusMessage, location);
+                }
+            }
+
+            // #endregion logAjaxStatus
 
             // #endregion Methods
 
@@ -2224,45 +2384,29 @@
 
             // #region Methods
 
+            // #region delete
+
+            /**
+             * Delete data from the server using a HTTP DELETE request and return the jqXHR object
+             * @param {String} url - The URL to which the request is sent
+             * @param {Function} callback - The function that is executed if the request succeeds
+             */
+            self.delete = function (url, callback) {
+                return ajax(verbs.DELETE, url, callback);
+            };
+
+            // #endregion delete
+
             // #region get
 
             /**
-             * Load data from the server using a HTTP GET request
+             * Load data from the server using a HTTP GET request and return the jqXHR object
              * @param {String} url - The URL to which the request is sent
              * @param {Function} callback - The function that is executed if the request succeeds
              */
             self.get = function (url, callback) {
                 // TODO: Consider adding paramter to determine if error should display on current page or display error page
-                $.ajax({
-                    url: url,
-                    cache: false,
-                    async: false
-                })
-                    .done(function (data, textStatus, jqXhr) {
-                        log.info("Status: " + textStatus, "flash.http.get");
-
-                        if (flash.utils.object.isFunction(callback)) {
-                            callback(data);
-                        }
-                    })
-                    .fail(function (jqXhr, textStatus, errorThrown) {
-                        log.error("Status: " + textStatus + ", Error: " + errorThrown, "flash.http.get");
-
-                        // Handle the error based on the returned status code
-                        if (jqXhr.status === statusCodes.REDIRECT) {
-                            triggerRedirect(jqXhr.responseText, verbs.GET);
-                        } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.UNAUTHORIZED);
-                        } else if (jqXhr.status === statusCodes.FORBIDDEN) {
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.FORBIDDEN);
-                        } else if (jqXhr.status === statusCodes.NOTFOUND) {
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
-                        } else {
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
-                        }
-
-                        flash.utils.clearTemplates();
-                    });
+                return ajax(verbs.GET, url, callback);
             };
 
             // #endregion get
@@ -2299,7 +2443,7 @@
                         log.error("Failed to download '" + url + "', Exception: " + exception, "flash.http.getScript");
                     })
                     .always(function (jqXhr, textStatus) {
-                        log.info("Status: " + textStatus, "flash.http.getScript");
+                        logAjaxStatus(textStatus, "getScript");
 
                         if (flash.utils.object.isFunction(callback)) {
                             callback();
@@ -2312,7 +2456,7 @@
             // #region post
 
             /**
-             * Load data from the server using a HTTP POST request
+             * Push data from the server using a HTTP POST request and return the jqXHR object
              * @param {String} elementSelector - The form element selector
              * @param {String} url - The URL to which the request is sent
              * @param {(Object|String)} obj - A plain object or string that is sent to the server with the request
@@ -2321,56 +2465,27 @@
             self.post = function (elementSelector, url, obj, callback) {
                 flash.utils.toggleSubmitButton(elementSelector);
 
-                $.post(url, obj)
-                    .done(function (data, textStatus, jqXhr) {
-                        log.info("Status: " + textStatus, "flash.http.post");
-
-                        // Reset the alerts and validation before handling the success 
-                        flash.alert.reset();
-                        flash.utils.resetValidation(elementSelector);
-
-                        if (flash.utils.object.isFunction(callback)) {
-                            callback(data);
-                        }
-                    })
-                    .fail(function (jqXhr, textStatus, errorThrown) {
-                        log.error("Status: " + textStatus + ", Error: " + errorThrown, "flash.http.post");
-
-                        // Reset the alerts and validation before handling the error 
-                        flash.alert.reset();
-                        flash.utils.resetValidation(elementSelector);
-
-                        // Handle the error based on the returned status code
-                        if (jqXhr.status === statusCodes.REDIRECT) {
-                            triggerRedirect(jqXhr.responseText, verbs.POST);
-                        } else if (jqXhr.status === statusCodes.BADREQUEST) {
-                            displayFormErrors(elementSelector, jqXhr.responseText);
-                        } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
-                            flash.alert.danger(flash.resources.errorMessages.UNAUTHORIZED);
-                        } else if (jqXhr.status === statusCodes.FORBIDDEN) {
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.FORBIDDEN);
-                        } else if (jqXhr.status === statusCodes.NOTFOUND) {
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
-                        } else {
-                            flash.alert.dangerDefault();
-                        }
-
-                        flash.utils.clearTemplates();
-
-                        if (flash.utils.object.isFunction(callback)) {
-                            callback();
-                        }
-                    })
-                    .always(function (jqXhr, textStatus) {
-                        log.info("Status: " + textStatus, "flash.http.post");
-
-                        if (jqXhr.status !== statusCodes.REDIRECT && jqXhr.status !== statusCodes.FORBIDDEN) {
-                            flash.utils.toggleSubmitButton(elementSelector);
-                        }
-                    });
+                return ajax(verbs.POST, url, callback, obj, elementSelector);
             };
 
             // #endregion post
+
+            // #region put
+
+            /**
+             * Push data to the server using a HTTP PUT request and return the jqXHR object
+             * @param {String} elementSelector - The form element selector
+             * @param {String} url - The URL to which the request is sent
+             * @param {(Object|String)} obj - A plain object or string that is sent to the server with the request
+             * @param {Function} callback - The function that is executed when the request completes
+             */
+            self.put = function (elementSelector, url, obj, callback) {
+                flash.utils.toggleSubmitButton(elementSelector);
+
+                return ajax(verbs.PUT, url, callback, obj, elementSelector);
+            };
+
+            // #endregion put
 
             // #endregion Methods
 
