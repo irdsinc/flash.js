@@ -594,7 +594,7 @@
 
                 $modal.on(application.settings.modalShownEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
-                        template.callback();
+                        template.callback(true);
                     }
 
                     runAfterLoad(template.type);
@@ -606,6 +606,10 @@
                 $modal.on(application.settings.modalHiddenEventName, function () {
                     if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
                         application.settings.beforeUnload(template.type, params);
+                    }
+
+                    if (flash.utils.object.isFunction(template.callback)) {
+                        template.callback(false);
                     }
 
                     if (template.controller &&
