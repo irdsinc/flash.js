@@ -74,6 +74,8 @@
                     messagePath: "#/message",
                     modalParentElementSelector: ".modal",
                     modalHiddenEventName: "hidden.bs.modal",
+                    modalHideEventName: "hide.bs.modal",
+                    modalShowEventName: "show.bs.modal",
                     modalShownEventName: "shown.bs.modal",
                     pageLoadingClassName: "page-loading",
                     showButtonLoading: true,
@@ -451,9 +453,15 @@
 
             // #region templates
 
-                templates = [];
+                templates = [],
 
             // #endregion templates
+
+            // #region templateForUnload
+
+                templateForUnload = null;
+
+            // #endregion templateForUnload
 
             // #endregion Objects
 
@@ -514,10 +522,7 @@
                     });
                 }
 
-                // Check to make sure to page loading is active
-                if (application.settings.showPageLoading) {
-                    self.hidePageLoading();
-                }
+                self.hidePageLoading();
             }
 
             // #endregion runAfterLoad
@@ -592,6 +597,9 @@
                     $modal.modal("hide");
                 });
 
+                /*$modal.on(application.settings.modalShowEventName, function () {
+                });*/
+
                 $modal.on(application.settings.modalShownEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
                         template.callback(true);
@@ -603,11 +611,15 @@
                     //$(".modal-dialog").resize(function () { });
                 });
 
-                $modal.on(application.settings.modalHiddenEventName, function () {
+                $modal.on(application.settings.modalHideEventName, function () {
+                    self.hidePageLoading();
+
                     if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
                         application.settings.beforeUnload(template.type, params);
                     }
+                });
 
+                $modal.on(application.settings.modalHiddenEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
                         template.callback(false);
                     }
@@ -620,13 +632,11 @@
 
                     runAfterUnload(template.type, params);
 
-                    // Check to make sure to page loading is active
-                    if (application.settings.showPageLoading) {
-                        self.hidePageLoading();
-                    }
-
-                    // Unbind the shown/hidden events from the modal
-                    $modal.off(application.settings.modalShownEventName + "," + application.settings.modalHiddenEventName);
+                    // Unbind the show/shown/hide/hidden events from the modal
+                    $modal.off(application.settings.modalShowEventName + "," +
+                        application.settings.modalShownEventName + "," +
+                        application.settings.modalHideEventName + "," +
+                        application.settings.modalHiddenEventName);
 
                     // Remove the modal from the DOM
                     $modal.remove();
@@ -756,6 +766,10 @@
              * Clear the client browser session templates
              */
             self.clear = function () {
+                var previousRouteHash = routing.getPreviousRouteHash();
+
+                templateForUnload = get(previousRouteHash);
+
                 templates = [];
             };
 
@@ -767,6 +781,11 @@
              * Display the page loading element on the view
              */
             self.displayPageLoading = function () {
+                // Check to make sure to page loading is active
+                if (!application.settings.showPageLoading) {
+                    return;
+                }
+
                 var $pageLoading = $("." + application.settings.pageLoadingClassName);
 
                 if ($pageLoading.length) {
@@ -820,10 +839,7 @@
              * @param {Function} callback - The function that is executed when the template is loaded
              */
             self.loadModal = function (hash, url, prefix, params, callback) {
-                // Check to make sure to page loading is active
-                if (application.settings.showPageLoading) {
-                    self.displayPageLoading();
-                }
+                self.displayPageLoading();
 
                 var config = {
                     callback: callback,
@@ -852,6 +868,7 @@
              */
             self.loadPage = function (hash, url, title, prefix, params, callback) {
                 var config = {
+                    callback: callback,
                     containerElementSelector: application.settings.templateContainerElementSelector,
                     hash: hash,
                     params: params,
@@ -873,16 +890,13 @@
              * @param {String} hash - The unique identifier of the template
              * @param {String} url - The url of the view (html) to load
              * @param {String} containerElementSelector - The container element selector used to prepend the template to
-             * @param {String} prefix - The prefix used for the controller and tab objects
-             * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
-            self.loadPartial = function (hash, url, containerElementSelector, prefix, params, callback) {
+            self.loadPartial = function (hash, url, containerElementSelector, callback) {
                 var config = {
+                    callback: callback,
                     containerElementSelector: containerElementSelector,
                     hash: hash,
-                    params: params,
-                    prefix: prefix,
                     type: self.types.PARTIAL,
                     url: url
                 };
@@ -931,6 +945,12 @@
             self.unload = function (hash, params) {
                 var template = get(hash);
 
+                if (!template) {
+                    template = templateForUnload;
+
+                    templateForUnload = null;
+                }
+
                 // Ensure we have a template object
                 if (!template) {
                     log.warning(
@@ -940,10 +960,7 @@
                     return;
                 }
 
-                // Check to make sure to page loading is active
-                if (application.settings.showPageLoading) {
-                    self.displayPageLoading();
-                }
+                self.displayPageLoading();
 
                 // Check if pre-defined before unload function is still a function and run it in case it was overloaded by user
                 if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
@@ -1661,6 +1678,17 @@
             };
 
             // #endregion addRoute
+
+            // #region getPreviousRouteHash
+
+            /**
+             * Method to get the previous route hash
+             */
+            self.getPreviousRouteHash = function () {
+                return previousRouteHash;
+            };
+
+            // #endregion getPreviousRouteHash
 
             // #region listener
 
@@ -2662,8 +2690,6 @@
              * @param {String} hash - The unique identifier of the template
              * @param {String} url - The url of the view (html) to load
              * @param {String} containerElementSelector - The container element selector used to prepend the template to
-             * @param {String} prefix - The prefix used for the controller and tab objects
-             * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
             self.loadPartial = templating.loadPartial;
