@@ -506,6 +506,19 @@
 
             // #endregion get
 
+            // #region isResourceLoaded
+
+            /**
+             * Check whether the supplied source path has been loaded
+             * @param {String} src - The unqiue source path of the resource to check
+             * @returns {Boolean} Is the resource loaded at the supplied source
+             */
+            function isResourceLoaded(src) {
+                return $.inArray(src, loadedResources) >= 0;
+            }
+
+            // #endregion isResourceLoaded
+
             // #region load
 
             /**
@@ -2606,11 +2619,7 @@
              * @param {String} value - The value of the help block to display to the user
              */
             self.addHelpBlock = function (elementSelector, key, value) {
-                if (!elementSelector) {
-                    return;
-                }
-
-                if (!key) {
+                if (!elementSelector || !key) {
                     return;
                 }
 
@@ -2664,11 +2673,7 @@
              * @param {Function} callback - The function that is executed when the post request is done
              */
             self.bindSubmitEvent = function (elementSelector, url, callback) {
-                if (!elementSelector) {
-                    return;
-                }
-
-                if (!url) {
+                if (!elementSelector || !url) {
                     return;
                 }
 
