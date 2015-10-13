@@ -2376,11 +2376,15 @@
                     flash.utils.resetValidation(elementSelector);
                 }
 
+                var executeCallback = false;
+
                 // Handle the error based on the returned status code
                 if (jqXhr.status === statusCodes.REDIRECT) {
                     triggerRedirect(jqXhr.responseText);
                 } else if (jqXhr.status === statusCodes.BADREQUEST && (verb === verbs.POST || verb === verbs.PUT)) {
                     displayFormErrors(elementSelector, jqXhr.responseText);
+
+                    executeCallback = true;
                 } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
                     if (application.settings.unauthroizedAutoRedirect) {
                         var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
@@ -2388,6 +2392,8 @@
                         routing.redirect(unauthorizedRedirectPath);
                     } else if (verb === verbs.POST || verb === verbs.PUT) {
                         flash.alert.danger(flash.resources.errorMessages.UNAUTHORIZED);
+
+                        executeCallback = true;
                     } else {
                         flash.utils.displayErrorPage(flash.resources.errorMessages.UNAUTHORIZED);
                     }
@@ -2398,6 +2404,8 @@
                 } else {
                     if (verb === verbs.POST || verb === verbs.PUT) {
                         flash.alert.dangerDefault();
+
+                        executeCallback = true;
                     } else {
                         flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
                     }
@@ -2405,7 +2413,7 @@
 
                 templating.clear();
 
-                if ((verb === verbs.POST || verb === verbs.PUT) && !application.settings.unauthroizedAutoRedirect &&
+                if ((verb === verbs.POST || verb === verbs.PUT) && executeCallback &&
                     flash.utils.object.isFunction(callback)) {
                     callback();
                 }
