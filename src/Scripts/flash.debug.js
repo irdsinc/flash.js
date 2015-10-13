@@ -83,6 +83,7 @@
                     showPageLoading: true,
                     staticHeaderHeight: null,
                     templateContainerElementSelector: "#content",
+                    unauthroizedAutoRedirect: false,
                     unauthorizedRedirectPath: "#/sign-in"
                 },
                 statusMessage: null,
@@ -1684,12 +1685,33 @@
 
             /**
              * Method to get the previous route hash
+             * @returns {String} The previous route
              */
             self.getPreviousRouteHash = function () {
                 return previousRouteHash;
             };
 
             // #endregion getPreviousRouteHash
+
+            // #region getUnauthorizedRedirectPath
+
+            /**
+             * Method to get the unauthorized redirect path
+             * @returns {String} The unauthorized redirect path including return url, when applicable
+             */
+            self.getUnauthorizedRedirectPath = function () {
+                var returnUrl = encodeURIComponent(window.location.href),
+                    unauthorizedRedirectPath = application.settings.unauthorizedRedirectPath;
+
+                // Only attach the return URL if current page is not an error page
+                if (returnUrl.indexOf("error") < 0) {
+                    unauthorizedRedirectPath += returnUrlParameter + returnUrl;
+                }
+
+                return unauthorizedRedirectPath;
+            };
+
+            // #endregion getUnauthorizedRedirectPath
 
             // #region listener
 
@@ -1887,13 +1909,7 @@
             // a return URL
             Object.defineProperty(flash.resources.errorMessages, "UNAUTHORIZED", {
                 get: function () {
-                    var returnUrl = encodeURIComponent(window.location.href),
-                        unauthorizedRedirectPath = application.settings.unauthorizedRedirectPath;
-
-                    // Only attach the return URL if current page is not an error page
-                    if (returnUrl.indexOf("error") < 0) {
-                        unauthorizedRedirectPath += returnUrlParameter + returnUrl;
-                    }
+                    var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
 
                     return application.resources.errorMessages.UNAUTHORIZED.replace(
                         regexFormatItem,
@@ -2366,7 +2382,11 @@
                 } else if (jqXhr.status === statusCodes.BADREQUEST && (verb === verbs.POST || verb === verbs.PUT)) {
                     displayFormErrors(elementSelector, jqXhr.responseText);
                 } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
-                    if (verb === verbs.POST || verb === verbs.PUT) {
+                    if (application.settings.unauthroizedAutoRedirect) {
+                        var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
+
+                        routing.redirect(unauthorizedRedirectPath);
+                    } else if (verb === verbs.POST || verb === verbs.PUT) {
                         flash.alert.danger(flash.resources.errorMessages.UNAUTHORIZED);
                     } else {
                         flash.utils.displayErrorPage(flash.resources.errorMessages.UNAUTHORIZED);
@@ -2385,7 +2405,8 @@
 
                 templating.clear();
 
-                if ((verb === verbs.POST || verb === verbs.PUT) && flash.utils.object.isFunction(callback)) {
+                if ((verb === verbs.POST || verb === verbs.PUT) && !application.settings.unauthroizedAutoRedirect &&
+                    flash.utils.object.isFunction(callback)) {
                     callback();
                 }
             }
