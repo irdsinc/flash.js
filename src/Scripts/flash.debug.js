@@ -1705,6 +1705,8 @@
 
                 // Only attach the return URL if current page is not an error page
                 if (returnUrl.indexOf("error") < 0) {
+                    var returnUrlParameter = "?returnUrl=";
+
                     unauthorizedRedirectPath += returnUrlParameter + returnUrl;
                 }
 
@@ -1887,8 +1889,7 @@
          * @param {Object} resources - The object containing the string resources to override
          */
         flash.run = function (title, options, resources) {
-            var regexFormatItem = /{\d+}/g,
-                returnUrlParameter = "?returnUrl=";
+            var regexFormatItem = /{\d+}/g;
 
             application.title = title;
 
@@ -3200,7 +3201,11 @@
              * @returns {Boolean} Whether the browser is mobile
              */
             self.isBrowserMobile = function () {
-                return $.browser.mobile || ("ontouchstart" in window);
+                if (!$.browser) {
+                    log.error("jQuery.browser.mobile is undefined.", "flash.utils.isBrowserMobile");
+                }
+
+                return $.browser && $.browser.mobile || "ontouchstart" in window;
             };
 
             // #endregion isBrowserMobile
