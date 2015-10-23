@@ -927,11 +927,11 @@
 
             /**
              * Set the document title
-             * @param {string} pagetTitle - The title of the template page that has been loaded
+             * @param {string} pageTitle - The title of the template page that has been loaded
              */
-            self.setDocumentTitle = function (pagetTitle) {
-                document.title = pagetTitle
-                    ? pagetTitle + (application.title ? " | " + application.title : "")
+            self.setDocumentTitle = function (pageTitle) {
+                document.title = pageTitle
+                    ? pageTitle + (application.title ? " | " + application.title : "")
                     : application.title;
             };
 
@@ -2755,7 +2755,7 @@
 
             /**
              * Set the document title
-             * @param {string} pagetTitle - The title of the template page that has been loaded
+             * @param {string} pageTitle - The title of the template page that has been loaded
              */
             self.setDocumentTitle = templating.setDocumentTitle;
 
@@ -3366,14 +3366,14 @@
 
             /**
              * Set the document title
-             * @param {string} pagetTitle - The title of the template page that has been loaded
+             * @param {string} pageTitle - The title of the template page that has been loaded
              */
-            self.setDocumentTitle = function (pagetTitle) {
+            self.setDocumentTitle = function (pageTitle) {
                 log.depreciated(
                     "This method is depreciated and will be removed in version 2.0. Please use flash.template.setDocumentTitle() instead.",
                     "flash.utils.setDocumentTitle");
 
-                templating.setDocumentTitle(pagetTitle);
+                templating.setDocumentTitle(pageTitle);
             }
 
             // #endregion setDocumentTitle

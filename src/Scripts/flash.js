@@ -741,11 +741,11 @@
 
             /**
              * Set the document title
-             * @param {string} pagetTitle - The title of the template page that has been loaded
+             * @param {string} pageTitle - The title of the template page that has been loaded
              */
-            self.setDocumentTitle = function (pagetTitle) {
-                document.title = pagetTitle
-                    ? pagetTitle + (application.title ? " | " + application.title : "")
+            self.setDocumentTitle = function (pageTitle) {
+                document.title = pageTitle
+                    ? pageTitle + (application.title ? " | " + application.title : "")
                     : application.title;
             };
 
@@ -2517,7 +2517,7 @@
 
             /**
              * Set the document title
-             * @param {string} pagetTitle - The title of the template page that has been loaded
+             * @param {string} pageTitle - The title of the template page that has been loaded
              */
             self.setDocumentTitle = templating.setDocumentTitle;
 
@@ -3068,7 +3068,7 @@
 
             /**
              * Set the document title
-             * @param {string} pagetTitle - The title of the template page that has been loaded
+             * @param {string} pageTitle - The title of the template page that has been loaded
              */
             self.setDocumentTitle = templating.setDocumentTitle;
 
