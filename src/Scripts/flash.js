@@ -364,7 +364,9 @@
                     });
                 }
 
-                self.hidePageLoading();
+                if (type !== self.types.PARTIAL) {
+                    self.hidePageLoading();
+                }
             }
 
             // #endregion runAfterLoad
@@ -2846,7 +2848,7 @@
                 for (var prop in source) {
                     if (ko.isObservable(target[prop])) {
                         target[prop](source[prop]);
-                    } else if (typeof source[prop] === "object") {
+                    } else if (source[prop] && typeof source[prop] === "object") {
                         target[prop] = extend(target[prop], source[prop]);
                     } else {
                         target[prop] = source[prop];
