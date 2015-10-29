@@ -32,7 +32,7 @@
                 activeTab: null,
                 resources: {
                     errorMessages: {
-                        DEFAULT: "An error occured. Please try again.",
+                        DEFAULT: "An unknown error occured. Please try again.",
                         FORBIDDEN: "You do not have permission to view this directory or page.",
                         NOTFOUND: "The page cannot be found.",
                         UNAUTHORIZED: "Your session has expired. Please <a href=\"{0}\">Sign In</a> to continue."
@@ -65,7 +65,7 @@
                     staticHeaderHeight: null,
                     templateContainerElementSelector: "#content",
                     unauthroizedAutoRedirect: false,
-                    unauthorizedRedirectPath: "#/sign-in"
+                    unauthorizedRedirectPath: "/#/sign-in"
                 },
                 statusMessage: null,
                 title: null
