@@ -62,6 +62,7 @@
                     afterUnload: function () { },
                     alertModalTargetElementSelector: ".modal-body",
                     alertPageTargetElementSelector: "body > #content > .container",
+                    baseRootPath: "/",
                     beforeLoad: function () { },
                     beforeUnload: function () { },
                     buttonLoadingClassName: "btn-loading",
@@ -84,7 +85,7 @@
                     staticHeaderHeight: null,
                     templateContainerElementSelector: "#content",
                     unauthroizedAutoRedirect: false,
-                    unauthorizedRedirectPath: "/#/sign-in"
+                    unauthorizedRedirectPath: "#/sign-in"
                 },
                 statusMessage: null,
                 title: null
@@ -441,6 +442,12 @@
 
             // #endregion buttonSelector
 
+            // #region clearRequested
+
+                clearRequested = false,
+
+            // #endregion clearRequested
+
             // #region loadedResources
 
                 loadedResources = [],
@@ -455,15 +462,9 @@
 
             // #region templates
 
-                templates = [],
+                templates = [];
 
             // #endregion templates
-
-            // #region templateForUnload
-
-                templateForUnload = null;
-
-            // #endregion templateForUnload
 
             // #endregion Objects
 
@@ -502,7 +503,7 @@
 
                 // Bind click event to any link to allow for reloading page if the href is the current hash
                 $("a").unbind("click").bind("click", function () {
-                    if ($(this).attr("href") === window.location.hash) {
+                    if ($(this).attr("href") === flash.utils.buildUrl(window.location.hash)) {
                         routing.redirect(window.location.hash);
                     }
                 });
@@ -770,11 +771,7 @@
              * Clear the client browser session templates
              */
             self.clear = function () {
-                var previousRouteHash = routing.getPreviousRouteHash();
-
-                templateForUnload = get(previousRouteHash);
-
-                templates = [];
+                clearRequested = true;
             };
 
             // #endregion clear
@@ -949,10 +946,11 @@
             self.unload = function (hash, params) {
                 var template = get(hash);
 
-                if (!template) {
-                    template = templateForUnload;
+                // Clear templates if a clear was requested
+                if (clearRequested) {
+                    templates = [];
 
-                    templateForUnload = null;
+                    clearRequested = false;
                 }
 
                 // Ensure we have a template object
@@ -1683,18 +1681,6 @@
 
             // #endregion addRoute
 
-            // #region getPreviousRouteHash
-
-            /**
-             * Method to get the previous route hash
-             * @returns {String} The previous route
-             */
-            self.getPreviousRouteHash = function () {
-                return previousRouteHash;
-            };
-
-            // #endregion getPreviousRouteHash
-
             // #region getUnauthorizedRedirectPath
 
             /**
@@ -1916,7 +1902,7 @@
 
                     return application.resources.errorMessages.UNAUTHORIZED.replace(
                         regexFormatItem,
-                        unauthorizedRedirectPath);
+                        flash.utils.buildUrl(unauthorizedRedirectPath));
                 }
             });
 
@@ -2306,7 +2292,7 @@
              * @param {String} elementSelector - The form element selector
              */
             function ajax(verb, url, callback, obj, elementSelector) {
-                var config = { url: url, method: verb };
+                var config = { url: flash.utils.buildUrl(url), method: verb };
 
                 // Configure HTTP request based on verb
                 if (verb === verbs.DELETE || verb === verbs.GET) {
@@ -2373,6 +2359,8 @@
             function failCallback(verb, jqXhr, textStatus, errorThrown, callback, elementSelector) {
                 logAjaxStatus(textStatus, verb.toLowerCase(), errorThrown);
 
+                templating.clear();
+
                 if (verb === verbs.POST || verb === verbs.PUT) {
                     // Reset the alerts and validation before handling the error 
                     flash.alert.reset();
@@ -2413,8 +2401,6 @@
                         flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
                     }
                 }
-
-                templating.clear();
 
                 if ((verb === verbs.POST || verb === verbs.PUT) && executeCallback &&
                     flash.utils.object.isFunction(callback)) {
@@ -2512,7 +2498,7 @@
              */
             self.getImage = function (src, callback) {
                 $("<img/>", {
-                    src: src
+                    src: flash.utils.buildUrl(src)
                 }).load(function () {
                     if (flash.utils.object.isFunction(callback)) {
                         callback();
@@ -2530,7 +2516,7 @@
              * @param {Function} callback - The function that is executed when the request completes
              */
             self.getScript = function (url, callback) {
-                $.getScript(url)
+                $.getScript(flash.utils.buildUrl(url))
                     .fail(function (jqXhr, settings, exception) {
                         log.error("Failed to download '" + url + "', Exception: " + exception, "flash.http.getScript");
                     })
@@ -3007,6 +2993,24 @@
             };
 
             // #endregion bindSubmitEvent
+
+            // #region buildUrl
+
+            /**
+             * Build a url using the base root path unless url is relative or fully defined url
+             * @param {String} url - The base url
+             * @returns {String} The relative or fully defined built url
+             */
+            self.buildUrl = function (url) {
+                // Return url if relative or fully defined
+                if (url.indexOf("//") >= 0 || url.indexOf("/") === 0) {
+                    return url;
+                }
+
+                return application.settings.baseRootPath + url;
+            };
+
+            // #endregion buildUrl
 
             // #region buildUrlWithQueryString
 
