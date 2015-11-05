@@ -70,9 +70,9 @@
                     caseSensitiveRoutes: false,
                     disableSpanInLabelDefaultAction: true,
                     documentParentElementSelector: "html, body",
-                    errorPath: "#/error",
+                    errorPath: "error",
                     googleAnalyticsTrackingCode: null,
-                    messagePath: "#/message",
+                    messagePath: "message",
                     mobilePositionFixedElementSelector: null,
                     modalParentElementSelector: ".modal",
                     modalHiddenEventName: "hidden.bs.modal",
@@ -85,7 +85,7 @@
                     staticHeaderHeight: null,
                     templateContainerElementSelector: "#content",
                     unauthroizedAutoRedirect: false,
-                    unauthorizedRedirectPath: "#/sign-in"
+                    unauthorizedRedirectPath: "sign-in"
                 },
                 statusMessage: null,
                 title: null
@@ -503,7 +503,7 @@
 
                 // Bind click event to any link to allow for reloading page if the href is the current hash
                 $("a").unbind("click").bind("click", function () {
-                    if ($(this).attr("href") === flash.utils.buildUrl(window.location.hash)) {
+                    if (window.location.hash != "" && $(this).attr("href") === flash.utils.buildUrl(window.location.hash)) {
                         routing.redirect(window.location.hash);
                     }
                 });
@@ -575,7 +575,11 @@
                     callback();
                 }
 
-                flash.utils.scrollTo(flash.$parentElement, $templateContainerElement);
+                var $parentElement = template.type === self.types.PAGE
+                    ? $(application.settings.documentParentElementSelector)
+                    : flash.$parentElement;
+
+                flash.utils.scrollTo($parentElement, $templateContainerElement);
 
                 if (flash.utils.object.isFunction(template.callback)) {
                     template.callback(true);
@@ -600,6 +604,11 @@
                 // Hide the modal when a hashchange event fires
                 hashchange.bind(function () {
                     $modal.modal("hide");
+
+                    // When modal lives inside #content container, modal elements are not properly updated on hide event,
+                    // due to missing reference when HTML is replaced inside #content container
+                    $("body").removeClass("modal-open");
+                    $(".modal-backdrop").remove();
                 });
 
                 /*$modal.on(application.settings.modalShowEventName, function () {
@@ -1689,7 +1698,7 @@
              */
             self.getUnauthorizedRedirectPath = function () {
                 var returnUrl = encodeURIComponent(window.location.href),
-                    unauthorizedRedirectPath = application.settings.unauthorizedRedirectPath;
+                    unauthorizedRedirectPath = buildHash(application.settings.unauthorizedRedirectPath);
 
                 // Only attach the return URL if current page is not an error page
                 if (returnUrl.indexOf("error") < 0) {
