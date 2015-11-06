@@ -1359,8 +1359,8 @@
              * @param {String} prefix - The prefix used for the controller and tab objects
              */
             function addOnLoad(hash, routeHash, url, title, prefix) {
-                onLoads[hash] = function (params) {
-                    templating.loadPage(routeHash, url, title, prefix, params);
+                onLoads[hash] = function (params, callback) {
+                    templating.loadPage(routeHash, url, title, prefix, params, callback);
                 };
             }
 
@@ -1552,31 +1552,31 @@
 
                 // Try to execute the non altered request hash load method
                 if (onLoad) {
-                    onLoad();
-
-                    previousRouteHash = routeHash;
+                    onLoad(null, function () {
+                        previousRouteHash = routeHash;
+                    });
                     // Try to execute the lower cased request hash load method
                 } else if (onLoadLower) {
-                    onLoadLower();
-
-                    previousRouteHash = routeHashLower;
+                    onLoadLower(null, function () {
+                        previousRouteHash = routeHashLower;
+                    });
                     // Try to execute the regex request hash load method
                 } else {
                     var match = regexMatch(routeHash);
 
                     // Non altered regex request hash
                     if (match.success === true) {
-                        onLoads[match.hash](match.params);
-
-                        previousRouteHash = routeHash;
+                        onLoads[match.hash](match.params, function () {
+                            previousRouteHash = routeHash;
+                        });
                         // Lower cased regex request hash
                     } else {
                         var matchLower = regexMatch(routeHashLower);
 
                         if (matchLower.success === true) {
-                            onLoads[matchLower.hash](matchLower.params);
-
-                            previousRouteHash = routeHashLower;
+                            onLoads[matchLower.hash](matchLower.params, function () {
+                                previousRouteHash = routeHashLower;
+                            });
                         } else {
                             flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
                         }
@@ -1746,11 +1746,11 @@
                     return;
                 }
 
-                window.location.hash = builtHash;
-
-                if (previousRouteHash == builtHash || previousRouteHash == builtHashLower) {
+                if (window.location.hash === builtHash || window.location.hash === builtHashLower) {
                     runOnUnload(previousRouteHash);
                     runOnLoad(builtHash, builtHashLower);
+                } else {
+                    window.location.hash = builtHash;
                 }
             };
 
