@@ -487,10 +487,11 @@
                     runAfterUnload(template.type, params);
 
                     // Unbind the show/shown/hide/hidden events from the modal
-                    $modal.off(application.settings.modalShowEventName + "," +
-                        application.settings.modalShownEventName + "," +
-                        application.settings.modalHideEventName + "," +
-                        application.settings.modalHiddenEventName);
+                    $modal
+                        .off(application.settings.modalShowEventName)
+                        .off(application.settings.modalShownEventName)
+                        .off(application.settings.modalHideEventName)
+                        .off(application.settings.modalHiddenEventName);
 
                     // Remove the modal from the DOM
                     $modal.remove();
@@ -1144,6 +1145,12 @@
 
             // #endregion regexStartAnchor
 
+            // #region reloadRequested
+
+                reloadRequested = false,
+
+            // #endregion reloadRequested
+
             // #region routePathDivider
 
                 routePathDivider = "/";
@@ -1214,46 +1221,6 @@
             }
 
             // #endregion addRegexRoute
-
-            // #region buildHash
-
-            /**
-             * Build the hash to ensure a hashtag/slash prefix
-             * @param {String} path - The route identifier, must be unique
-             * @returns {String} The updated hash containing the hashtag/slash prefix
-             */
-            function buildHash(path) {
-                // Ensure the path is a string
-                if (flash.utils.object.isString(path)) {
-                    // Return the path if the hashtag/slash prefix exists
-                    if (path.indexOf(hashPrefix) === 0) {
-                        return path;
-                    }
-
-                    var hashtag = "#",
-                        hashtagIndex = path.indexOf(hashtag),
-                        slashIndex = path.indexOf("/");
-
-                    // Neither hashtag nor slash exist, prepend to the hash
-                    if (hashtagIndex !== 0 && slashIndex !== 0) {
-                        return hashPrefix + path;
-                    }
-
-                    // hashtag does not exist, but slash exists
-                    if (hashtagIndex !== 0 && slashIndex === 0) {
-                        return hashtag + path;
-                    }
-
-                    // hashtag exists, but slash does not
-                    if (hashtagIndex === 0 && slashIndex !== 1) {
-                        return hashPrefix + path.substring(1);
-                    }
-                }
-
-                return null;
-            }
-
-            // #endregion buildHash
 
             // #region getRoute
 
@@ -1463,7 +1430,7 @@
              * @param {Boolean} caseSensitive - Is the route case sensitive
              */
             self.addRoute = function (path, url, title, prefix, regex, caseSensitive) {
-                var builtHash = buildHash(path);
+                var builtHash = self.buildHash(path);
 
                 if (!builtHash) {
                     return;
@@ -1488,6 +1455,46 @@
 
             // #endregion addRoute
 
+            // #region buildHash
+
+            /**
+             * Build the hash to ensure a hashtag/slash prefix
+             * @param {String} path - The route identifier, must be unique
+             * @returns {String} The updated hash containing the hashtag/slash prefix
+             */
+            self.buildHash = function (path) {
+                // Ensure the path is a string
+                if (flash.utils.object.isString(path)) {
+                    // Return the path if the hashtag/slash prefix exists
+                    if (path.indexOf(hashPrefix) === 0) {
+                        return path;
+                    }
+
+                    var hashtag = "#",
+                        hashtagIndex = path.indexOf(hashtag),
+                        slashIndex = path.indexOf("/");
+
+                    // Neither hashtag nor slash exist, prepend to the hash
+                    if (hashtagIndex !== 0 && slashIndex !== 0) {
+                        return hashPrefix + path;
+                    }
+
+                    // hashtag does not exist, but slash exists
+                    if (hashtagIndex !== 0 && slashIndex === 0) {
+                        return hashtag + path;
+                    }
+
+                    // hashtag exists, but slash does not
+                    if (hashtagIndex === 0 && slashIndex !== 1) {
+                        return hashPrefix + path.substring(1);
+                    }
+                }
+
+                return null;
+            };
+
+            // #endregion buildHash
+
             // #region getUnauthorizedRedirectPath
 
             /**
@@ -1496,7 +1503,12 @@
              */
             self.getUnauthorizedRedirectPath = function () {
                 var returnUrl = encodeURIComponent(window.location.href),
-                    unauthorizedRedirectPath = buildHash(application.settings.unauthorizedRedirectPath);
+                    unauthorizedRedirectPath = application.settings.unauthorizedRedirectPath;
+
+                // Check if the path is a full defined url
+                if (unauthorizedRedirectPath.indexOf("//") < 0) {
+                    unauthorizedRedirectPath = self.buildHash(unauthorizedRedirectPath);
+                }
 
                 // Only attach the return URL if current page is not an error page
                 if (returnUrl.indexOf("error") < 0) {
@@ -1516,6 +1528,10 @@
              * Listener to be executed when hashchange event is fired
              */
             self.listener = function () {
+                if (reloadRequested) {
+                    return;
+                }
+
                 var routeHash = window.location.hash;
 
                 if (!routeHash) {
@@ -1537,7 +1553,7 @@
              * @param {String} path - The route identifier to load
              */
             self.redirect = function (path) {
-                var builtHash = buildHash(path),
+                var builtHash = self.buildHash(path),
                     builtHashLower = toLowerCase(builtHash);
 
                 if (!builtHash) {
@@ -1553,6 +1569,26 @@
             };
 
             // #endregion redirect
+
+            // #region reload
+
+            /**
+             * reload the window to the new path
+             * @param {String} path - The route identifier to load
+             */
+            self.reload = function (path) {
+                reloadRequested = true;
+
+                path = flash.utils.buildUrl(path);
+
+                window.location = path;
+
+                if (path.indexOf(hashPrefix) >= 0) {
+                    window.location.reload();
+                }
+            };
+
+            // #endregion reload
 
             // #endregion Methods
 
@@ -2070,7 +2106,13 @@
 
                     // Make sure the response is an object and contains the Path string
                     if (response && response.Path) {
-                        routing.redirect(response.Path);
+                        var path = response.Path;
+
+                        if (path.indexOf("//") < 0) {
+                            path = routing.buildHash(path);
+                        }
+
+                        routing.reload(path);
 
                         return;
                     }
@@ -2179,7 +2221,7 @@
                     if (application.settings.unauthroizedAutoRedirect) {
                         var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
 
-                        routing.redirect(unauthorizedRedirectPath);
+                        routing.reload(unauthorizedRedirectPath);
                     } else if (verb === verbs.POST || verb === verbs.PUT) {
                         flash.alert.danger(flash.resources.errorMessages.UNAUTHORIZED);
 
@@ -2381,6 +2423,16 @@
             self.redirect = routing.redirect;
 
             // #endregion redirect
+
+            // #region reload
+
+            /**
+             * Reload the window to the new path
+             * @param {String} path - The route identifier to load
+             */
+            self.reload = routing.reload;
+
+            // #endregion reload
 
             // #endregion Methods
 
