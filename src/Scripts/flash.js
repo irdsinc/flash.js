@@ -1349,7 +1349,7 @@
                                 previousRouteHash = routeHashLower;
                             });
                         } else {
-                            flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
+                            flash.utils.displayErrorPage(flash.http.statusCodes.NOTFOUND);
                         }
                     }
                 }
@@ -2126,9 +2126,9 @@
                     }
 
                     // If the response object did not contain the Path string, redirect to the error page
-                    flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
+                    flash.utils.displayErrorPage(flash.http.statusCodes.BADREQUEST);
                 } catch (e) {
-                    flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
+                    flash.utils.displayErrorPage(flash.http.statusCodes.BADREQUEST);
                 }
             }
 
@@ -2235,19 +2235,19 @@
 
                         executeCallback = true;
                     } else {
-                        flash.utils.displayErrorPage(flash.resources.errorMessages.UNAUTHORIZED);
+                        flash.utils.displayErrorPage(flash.http.statusCodes.UNAUTHORIZED);
                     }
                 } else if (jqXhr.status === self.statusCodes.FORBIDDEN) {
-                    flash.utils.displayErrorPage(flash.resources.errorMessages.FORBIDDEN);
+                    flash.utils.displayErrorPage(flash.http.statusCodes.FORBIDDEN);
                 } else if (jqXhr.status === self.statusCodes.NOTFOUND) {
-                    flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
+                    flash.utils.displayErrorPage(flash.http.statusCodes.NOTFOUND);
                 } else {
                     if (verb === verbs.POST || verb === verbs.PUT) {
                         flash.alert.dangerDefault();
 
                         executeCallback = true;
                     } else {
-                        flash.utils.displayErrorPage(flash.resources.errorMessages.DEFAULT);
+                        flash.utils.displayErrorPage(flash.http.statusCodes.BADREQUEST);
                     }
                 }
 
