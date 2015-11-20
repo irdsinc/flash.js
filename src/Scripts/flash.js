@@ -51,7 +51,13 @@
                     caseSensitiveRoutes: false,
                     disableSpanInLabelDefaultAction: true,
                     documentParentElementSelector: "html, body",
-                    errorPath: "error",
+                    errorPath: {
+                        defaultPath: "error",
+                        400: "error/bad-request",
+                        401: "error/unauthorized",
+                        403: "error/forbidden",
+                        404: "error/not-found"
+                    },
                     googleAnalyticsTrackingCode: null,
                     messagePath: "message",
                     mobilePositionFixedElementSelector: null,
@@ -1505,11 +1511,6 @@
                 var returnUrl = encodeURIComponent(window.location.href),
                     unauthorizedRedirectPath = application.settings.unauthorizedRedirectPath;
 
-                // Check if the path is a full defined url
-                if (unauthorizedRedirectPath.indexOf("//") < 0) {
-                    unauthorizedRedirectPath = self.buildHash(unauthorizedRedirectPath);
-                }
-
                 // Only attach the return URL if current page is not an error page
                 if (returnUrl.indexOf("error") < 0) {
                     var returnUrlParameter = "?returnUrl=";
@@ -1553,18 +1554,28 @@
              * @param {String} path - The route identifier to load
              */
             self.redirect = function (path) {
-                var builtHash = self.buildHash(path),
-                    builtHashLower = toLowerCase(builtHash);
+                var slashSlashIndex = path.indexOf("//");
 
-                if (!builtHash) {
-                    return;
-                }
+                // Check if url is fully defined main url (account for http: or https:)
+                if (slashSlashIndex >= 0 && slashSlashIndex <= 6) {
+                    // Build the url with the base root path
+                    path = flash.utils.buildUrl(path);
 
-                if (window.location.hash === builtHash || window.location.hash === builtHashLower) {
-                    runOnUnload(previousRouteHash);
-                    runOnLoad(builtHash, builtHashLower);
+                    window.location = path;
                 } else {
-                    window.location.hash = builtHash;
+                    var builtHash = self.buildHash(path),
+                        builtHashLower = toLowerCase(builtHash);
+
+                    if (!builtHash) {
+                        return;
+                    }
+
+                    if (window.location.hash === builtHash || window.location.hash === builtHashLower) {
+                        runOnUnload(previousRouteHash);
+                        runOnLoad(builtHash, builtHashLower);
+                    } else {
+                        window.location.hash = builtHash;
+                    }
                 }
             };
 
@@ -1579,10 +1590,19 @@
             self.reload = function (path) {
                 reloadRequested = true;
 
+                var slashSlashIndex = path.indexOf("//");
+
+                // Check if the path is not a fully defined url or fully defined url is not main (account for http: or https:)
+                if (slashSlashIndex < 0 || slashSlashIndex > 6) {
+                    path = self.buildHash(path);
+                }
+
+                // Build the url with the base root path
                 path = flash.utils.buildUrl(path);
 
                 window.location = path;
 
+                // Reload page if a hash prefix exists, since this would trigger a hash change only
                 if (path.indexOf(hashPrefix) >= 0) {
                     window.location.reload();
                 }
@@ -1742,6 +1762,12 @@
             Object.defineProperty(flash.resources.errorMessages, "UNAUTHORIZED", {
                 get: function () {
                     var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
+                    var slashSlashIndex = unauthorizedRedirectPath.indexOf("//");
+
+                    // Check if the path is not a fully defined url or fully defined url is not main (account for http: or https:)
+                    if (slashSlashIndex < 0 || slashSlashIndex > 6) {
+                        unauthorizedRedirectPath = routing.buildHash(unauthorizedRedirectPath);
+                    }
 
                     return application.resources.errorMessages.UNAUTHORIZED.replace(
                         regexFormatItem,
@@ -2028,18 +2054,6 @@
 
             // #region Objects
 
-            // #region statusCodes
-
-                statusCodes = {
-                    BADREQUEST: 400,
-                    FORBIDDEN: 403,
-                    NOTFOUND: 404,
-                    REDIRECT: 302,
-                    UNAUTHORIZED: 401
-                },
-
-            // #endregion statusCodes
-
             // #region verbs
 
                 verbs = {
@@ -2106,13 +2120,7 @@
 
                     // Make sure the response is an object and contains the Path string
                     if (response && response.Path) {
-                        var path = response.Path;
-
-                        if (path.indexOf("//") < 0) {
-                            path = routing.buildHash(path);
-                        }
-
-                        routing.reload(path);
+                        routing.reload(response.Path);
 
                         return;
                     }
@@ -2211,13 +2219,13 @@
                 var executeCallback = false;
 
                 // Handle the error based on the returned status code
-                if (jqXhr.status === statusCodes.REDIRECT) {
+                if (jqXhr.status === self.statusCodes.REDIRECT) {
                     triggerRedirect(jqXhr.responseText);
-                } else if (jqXhr.status === statusCodes.BADREQUEST && (verb === verbs.POST || verb === verbs.PUT)) {
+                } else if (jqXhr.status === self.statusCodes.BADREQUEST && (verb === verbs.POST || verb === verbs.PUT)) {
                     displayFormErrors(elementSelector, jqXhr.responseText);
 
                     executeCallback = true;
-                } else if (jqXhr.status === statusCodes.UNAUTHORIZED) {
+                } else if (jqXhr.status === self.statusCodes.UNAUTHORIZED) {
                     if (application.settings.unauthroizedAutoRedirect) {
                         var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
 
@@ -2229,9 +2237,9 @@
                     } else {
                         flash.utils.displayErrorPage(flash.resources.errorMessages.UNAUTHORIZED);
                     }
-                } else if (jqXhr.status === statusCodes.FORBIDDEN) {
+                } else if (jqXhr.status === self.statusCodes.FORBIDDEN) {
                     flash.utils.displayErrorPage(flash.resources.errorMessages.FORBIDDEN);
-                } else if (jqXhr.status === statusCodes.NOTFOUND) {
+                } else if (jqXhr.status === self.statusCodes.NOTFOUND) {
                     flash.utils.displayErrorPage(flash.resources.errorMessages.NOTFOUND);
                 } else {
                     if (verb === verbs.POST || verb === verbs.PUT) {
@@ -2265,7 +2273,7 @@
                     return;
                 }
 
-                if (jqXhr.status !== statusCodes.REDIRECT && jqXhr.status !== statusCodes.FORBIDDEN) {
+                if (jqXhr.status !== self.statusCodes.REDIRECT && jqXhr.status !== self.statusCodes.FORBIDDEN) {
                     flash.utils.toggleSubmitButton(elementSelector);
                 }
             }
@@ -2277,6 +2285,22 @@
             // #endregion Private
 
             // #region Public
+
+            // #region Objects
+
+            // #region statusCodes
+
+            self.statusCodes = {
+                BADREQUEST: 400,
+                FORBIDDEN: 403,
+                NOTFOUND: 404,
+                REDIRECT: 302,
+                UNAUTHORIZED: 401
+            };
+
+            // #endregion statusCodes
+
+            // #endregion Objects
 
             // #region Methods
 
@@ -2797,12 +2821,18 @@
              * @returns {String} The relative or fully defined built url
              */
             self.buildUrl = function (url) {
-                // Return url if relative or fully defined
-                if (url.indexOf("//") >= 0 || url.indexOf("/") === 0) {
+                var baseRootPath = application.settings.baseRootPath;
+                var slashSlashIndex = url.indexOf("//");
+
+                // Return url if fully defined url is main (account for http: or https:), not a string or already contains
+                // base root path
+                if ((slashSlashIndex >= 0 && slashSlashIndex <= 6) ||
+                    !self.object.isString(baseRootPath) ||
+                    url.indexOf(baseRootPath) === 0) {
                     return url;
                 }
 
-                return application.settings.baseRootPath + url;
+                return baseRootPath + url;
             };
 
             // #endregion buildUrl
@@ -2876,9 +2906,19 @@
              * @param {String} message - The message to display in the alert error box
              */
             self.displayErrorPage = function (message) {
-                application.statusMessage = new object.StatusMessage(flash.alert.types.DANGER, message);
+                var errorPath = application.settings.errorPath;
 
-                routing.redirect(application.settings.errorPath);
+                if (self.object.isString(message)) {
+                    var path = self.object.isString(errorPath) ? errorPath : errorPath.defaultPath;
+
+                    application.statusMessage = new object.StatusMessage(flash.alert.types.DANGER, message);
+
+                    routing.redirect(path);
+                } else {
+                    var path = errorPath[message] || errorPath.defaultPath;
+
+                    routing.reload(path);
+                }
             };
 
             // #endregion displayErrorPage
