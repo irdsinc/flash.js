@@ -1790,6 +1790,8 @@
              * @param {String} path - The route identifier to load
              */
             self.reload = function (path) {
+                templating.displayPageLoading();
+
                 reloadRequested = true;
 
                 var slashSlashIndex = path.indexOf("//");
