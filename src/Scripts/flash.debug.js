@@ -781,6 +781,27 @@
 
             // #region Methods
 
+            // #region addMetaTag
+
+            /**
+             * Add/update a meta tag
+             * @param {String} name - The meta tag name attribute value
+             * @param {String} content - The meta tag content attribute value
+             */
+            self.addMetaTag = function (name, content) {
+                var $currentMetaTag = $("meta[name='" + name + "']");
+
+                if (!$currentMetaTag.length) {
+                    $currentMetaTag = $("<meta/>").attr("name", name);
+
+                    $("title").before($currentMetaTag);
+                }
+
+                $currentMetaTag.attr("content", content);
+            };
+
+            // #endregion addMetaTag
+
             // #region clear
 
             /**
@@ -2728,6 +2749,17 @@
             // #endregion Objects
 
             // #region Methods
+
+            // #region addMetaTag
+
+            /**
+             * Add/update a meta tag
+             * @param {String} name - The meta tag name attribute value
+             * @param {String} content - The meta tag content attribute value
+             */
+            self.addMetaTag = templating.addMetaTag;
+
+            // #endregion addMetaTag
 
             // #region clear
 
