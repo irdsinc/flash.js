@@ -2313,10 +2313,16 @@
                         return;
                     }
 
+                    if (response.Message) {
+                        // Display the error message
+                        flash.alert.danger(response.Message);
+                    }
+
                     // Run through each error in the ModelState dictionary and display a help block for each error
                     for (var key in response.ModelState) {
                         if (response.ModelState.hasOwnProperty(key)) {
                             if (key === "_FORM") {
+                                flash.alert.reset();
                                 flash.alert.danger(response.ModelState[key][0]);
 
                                 continue;
@@ -2486,7 +2492,7 @@
 
                 if ((verb === verbs.POST || verb === verbs.PUT) && executeCallback &&
                     flash.utils.object.isFunction(callback)) {
-                    callback();
+                    callback(jqXhr);
                 }
             }
 
