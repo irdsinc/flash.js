@@ -2845,7 +2845,13 @@
              * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
-            self.loadPage = templating.loadPage;
+            self.loadPage = function (hash, url, title, prefix, params, callback) {
+                log.depreciated(
+                    "This method is depreciated and will be removed in version 2.0.",
+                    "flash.template.loadPage");
+
+                templating.loadPage(hash, url, title, prefix, params, callback);
+            };
 
             // #endregion loadPage
 
@@ -3410,12 +3416,12 @@
              * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function that is executed when the template is loaded
              */
-            self.loadPage = function (hash, url, prefix, params, callback) {
+            self.loadPage = function (hash, url, title, prefix, params, callback) {
                 log.depreciated(
-                    "This method is depreciated and will be removed in version 2.0. Please use flash.template.loadPage() instead.",
+                    "This method is depreciated and will be removed in version 2.0.",
                     "flash.utils.loadPage");
 
-                templating.loadPage(hash, url, prefix, params, callback);
+                templating.loadPage(hash, url, title, prefix, params, callback);
             };
 
             // #endregion loadPage
@@ -3671,6 +3677,10 @@
                 for (var i = events.length - 1; i >= 0; i--) {
                     exports[events[i]] = (function (event) {
                         return function (elementSelector, elementParentSelector) {
+                            log.depreciated(
+                                "This method is depreciated and will be removed in version 2.0.",
+                                "flash.utils.unbind." + event);
+
                             unbindEvent(event, elementSelector, elementParentSelector);
                         }
                     })(events[i]);
@@ -3679,6 +3689,9 @@
                 // A custom event that is not implemented
                 exports["event"] = (function () {
                     return function (event, elementSelector, elementParentSelector) {
+                        log.depreciated(
+                            "This method is depreciated and will be removed in version 2.0.",
+                            "flash.utils.unbind." + event);
                         unbindEvent(event, elementSelector, elementParentSelector);
                     }
                 })();
@@ -3686,6 +3699,10 @@
                 // All events binded to the parent object
                 exports["events"] = (function () {
                     return function (elementParentSelector) {
+                        log.depreciated(
+                            "This method is depreciated and will be removed in version 2.0.",
+                            "flash.utils.unbind.events");
+
                         $(elementParentSelector || document).off();
                     }
                 })();
