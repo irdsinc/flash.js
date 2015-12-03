@@ -1249,6 +1249,22 @@
 
             // #endregion addRegexRoute
 
+            // #region executeOnLoad
+
+            /**
+             * Execute the load method for the requested route hash
+             * @param {Function} onLoad - The matching route onLoad function
+             * @param {String} routeHash - The requested route hash
+             * @param {Object} params - The object containing the parameters
+             */
+            function executeOnLoad(onLoad, routeHash, params) {
+                onLoad(params, function () {
+                    previousRouteHash = routeHash;
+                });
+            }
+
+            // #endregion executeOnLoad
+
             // #region getRoute
 
             /**
@@ -1334,7 +1350,7 @@
             // #region runOnLoad
 
             /**
-             * Execute the load method for the requested route hash
+             * Run the load method for the requested route hash
              * @param {String} routeHash - The requested route hash
              * @param {String} routeHashLower - The requested route hash in lower case form
              */
@@ -1344,31 +1360,23 @@
 
                 // Try to execute the non altered request hash load method
                 if (onLoad) {
-                    onLoad(null, function () {
-                        previousRouteHash = routeHash;
-                    });
+                    executeOnLoad(onLoad, routeHash);
                     // Try to execute the lower cased request hash load method
                 } else if (onLoadLower) {
-                    onLoadLower(null, function () {
-                        previousRouteHash = routeHashLower;
-                    });
+                    executeOnLoad(onLoadLower, routeHashLower);
                     // Try to execute the regex request hash load method
                 } else {
                     var match = regexMatch(routeHash);
 
                     // Non altered regex request hash
                     if (match.success === true) {
-                        onLoads[match.hash](match.params, function () {
-                            previousRouteHash = routeHash;
-                        });
+                        executeOnLoad(onLoads[match.hash], routeHash, match.params);
                         // Lower cased regex request hash
                     } else {
                         var matchLower = regexMatch(routeHashLower);
 
                         if (matchLower.success === true) {
-                            onLoads[matchLower.hash](matchLower.params, function () {
-                                previousRouteHash = routeHashLower;
-                            });
+                            executeOnLoad(onLoads[matchLower.hash], routeHashLower, matchLower.params);
                         } else {
                             flash.utils.displayErrorPage(flash.http.statusCodes.NOTFOUND);
                         }
