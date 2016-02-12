@@ -1,10 +1,12 @@
 ﻿/*!
  * Flash JavaScript Library v1.1.0 (http://flashjs.org)
- * Copyright 2015 IRDS, Inc.
+ * Copyright IRDS, Inc. - http://irdsinc.com
  * License: MIT (http://www.opensource.org/licenses/mit-license.php)
  */
 
 ; (function (window, document) {
+    "use strict";
+
     (function (factory) {
         // Support three module loading scenarios
         if (typeof window.define === "function" && window.define["amd"]) {
@@ -32,7 +34,7 @@
                 activeTab: null,
                 resources: {
                     errorMessages: {
-                        DEFAULT: "An unknown error occured. Please try again.",
+                        DEFAULT: "An unknown error occured. Please go back and try again.",
                         FORBIDDEN: "You do not have permission to view this directory or page.",
                         NOTFOUND: "The page cannot be found.",
                         UNAUTHORIZED: "Your session has expired. Please <a href=\"{0}\">Sign In</a> to continue."
@@ -43,6 +45,13 @@
                     afterUnload: function () { },
                     alertModalTargetElementSelector: ".modal-body",
                     alertPageTargetElementSelector: "body > #content > .container",
+                    anchorExclusionRoutingSelector: "[href^='http'],\
+                        [href^='https'],\
+                        [href^='tel'],\
+                        [href^='mailto'],\
+                        [href^='#'],\
+                        [target='_blank'],\
+                        .disable-flash-routing",
                     baseRootPath: "/",
                     beforeLoad: function () { },
                     beforeUnload: function () { },
@@ -51,6 +60,10 @@
                     caseSensitiveRoutes: false,
                     disableSpanInLabelDefaultAction: true,
                     documentParentElementSelector: "html, body",
+                    documentTitleFormats: {
+                        main: "{title} - {tagline}",
+                        content: "{pageTitle} | {title}"
+                    },
                     errorPath: {
                         defaultPath: "error",
                         400: "error/bad-request",
@@ -144,36 +157,6 @@
 
             // #region Constructors
 
-            // #region Match
-
-            /**
-             * The Match object constructor
-             * @param {Boolean} success - Did the regex match
-             * @param {String} hash - The matching hash
-             * @param {Object} params - The object containing the named parameters
-             */
-            self.Match = function (success, hash, params) {
-                this.success = success;
-                this.hash = hash;
-                this.params = params;
-            };
-
-            // #endregion Match
-
-            // #region Route
-
-            /**
-             * The Route object constructor
-             * @param {String} hash - The unique identifier of the route
-             * @param {Object} params - The object containing the parameters
-             */
-            self.Route = function (hash, params) {
-                this.hash = hash;
-                this.params = params;
-            };
-
-            // #endregion Route
-
             // #region StatusMessage
 
             /**
@@ -245,7 +228,7 @@
              */
             self.bind = function (method) {
                 if (flash.utils.object.isFunction(method)) {
-                    $(window).bind("hashchange", method);
+                    $(window).unbind("hashchange.flash").bind("hashchange.flash", method);
                 }
             };
 
@@ -259,6 +242,40 @@
         })(),
 
         // #endregion hashchange
+
+        // #region popstate
+
+        /**
+         * Private self executing function containing the popstate functions
+         */
+        popstate = (function () {
+            var self = {};
+
+            // #region Public
+
+            // #region Methods
+
+            // #region bind
+
+            /**
+             * Bind to the popstate event
+             */
+            self.bind = function (method) {
+                if (flash.utils.object.isFunction(method)) {
+                    $(window).unbind("popstate.flash").bind("popstate.flash", method);
+                }
+            };
+
+            // #endregion bind
+
+            // #endregion Methods
+
+            // #endregion Public
+
+            return self;
+        })(),
+
+        // #endregion popstate
 
         // #region templating
 
@@ -337,8 +354,10 @@
              * @param {Object} params - The object containing the parameters
              */
             function runAfterLoad(type, params) {
-                if (flash.utils.object.isFunction(application.settings.afterLoad)) {
-                    application.settings.afterLoad(type, params);
+                var afterLoad = application.settings.afterLoad;
+
+                if (flash.utils.object.isFunction(afterLoad)) {
+                    afterLoad(type, params);
                 }
 
                 // Send google analytics page view data
@@ -347,12 +366,7 @@
                 // Enable all disabled buttons in the current template
                 flash.$parentElement.find(buttonSelector).attr("disabled", false);
 
-                // Bind click event to any link to allow for reloading page if the href is the current hash
-                $("a").unbind("click").bind("click", function () {
-                    if (window.location.hash != "" && $(this).attr("href") === flash.utils.buildUrl(window.location.hash)) {
-                        routing.redirect(window.location.hash);
-                    }
-                });
+                routing.listener();
 
                 // Bind click event to any link buttons to allow for toggling and loading animation
                 flash.$parentElement.find("a.btn").click(function () {
@@ -361,9 +375,28 @@
                     flash.utils.toggleButton($button);
                 });
 
+                var mobilePositionFixedElementSelector = application.settings.mobilePositionFixedElementSelector;
+
+                // Check if user supplied position fixed elements for mobile
+                if (flash.utils.object.isString(mobilePositionFixedElementSelector)) {
+                    // On focus and blur for form elements, update position for fixed elements as virtual keyboard causes
+                    // issues
+                    $(document).off(".flashMobile").on("focus.flashMobile", "input, textarea, select", function () {
+                        if (flash.utils.isBrowserMobile()) {
+                            $(mobilePositionFixedElementSelector).css("position", "absolute");
+                        }
+                    }).on("blur.flashMobile", "input, textarea, select", function () {
+                        if (flash.utils.isBrowserMobile()) {
+                            $(mobilePositionFixedElementSelector).removeAttr("style");
+                        }
+                    });
+                }
+
+                var disableSpanInLabelDefaultAction = application.settings.disableSpanInLabelDefaultAction;
+
                 // Bind click event to labels containing span elements to disable default selection of checkbox, if
                 // checkbox is present
-                if (application.settings.disableSpanInLabelDefaultAction) {
+                if (flash.utils.object.isBoolean(disableSpanInLabelDefaultAction) && disableSpanInLabelDefaultAction === true) {
                     flash.$parentElement.find("label").has("span").click(function (e) {
                         if (e.target.nodeName === "SPAN") {
                             e.preventDefault();
@@ -395,8 +428,10 @@
                     $nav.height(1);
                 }
 
-                if (flash.utils.object.isFunction(application.settings.afterUnload)) {
-                    application.settings.afterUnload(type, params);
+                var afterUnload = application.settings.afterUnload;
+
+                if (flash.utils.object.isFunction(afterUnload)) {
+                    afterUnload(type, params);
                 }
             }
 
@@ -421,9 +456,11 @@
                     callback();
                 }
 
-                var $parentElement = template.type === self.types.PAGE
-                    ? $(application.settings.documentParentElementSelector)
-                    : flash.$parentElement;
+                var documentParentElementSelector = application.settings.documentParentElementSelector,
+                    $parentElement = template.type === self.types.PAGE &&
+                    flash.utils.object.isString(documentParentElementSelector)
+                        ? $(documentParentElementSelector)
+                        : flash.$parentElement;
 
                 flash.utils.scrollTo($parentElement, $templateContainerElement);
 
@@ -447,8 +484,8 @@
             function displayModal(template, preparedHtml, params) {
                 var $modal = $(preparedHtml);
 
-                // Hide the modal when a hashchange event fires
-                hashchange.bind(function () {
+                // Hide the modal when an unbind event fires
+                $(document).unbind("flash.routing.unload").bind("flash.routing.unload", function () {
                     $modal.modal("hide");
 
                     // When modal lives inside #content container, modal elements are not properly updated on hide event,
@@ -457,10 +494,22 @@
                     $(".modal-backdrop").remove();
                 });
 
-                /*$modal.on(application.settings.modalShowEventName, function () {
+                var modalShowEventName = application.settings.modalShowEventName,
+                    modalShownEventName = application.settings.modalShownEventName,
+                    modalHideEventName = application.settings.modalHideEventName,
+                    modalHiddenEventName = application.settings.modalHiddenEventName;
+
+                if (!flash.utils.object.isString(modalShowEventName) ||
+                    !flash.utils.object.isString(modalShownEventName) ||
+                    !flash.utils.object.isString(modalHideEventName) ||
+                    !flash.utils.object.isString(modalHiddenEventName)) {
+                    return;
+                }
+
+                /*$modal.on(modalShowEventName, function () {
                 });*/
 
-                $modal.on(application.settings.modalShownEventName, function () {
+                $modal.on(modalShownEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
                         template.callback(true);
                     }
@@ -471,15 +520,17 @@
                     //$(".modal-dialog").resize(function () { });
                 });
 
-                $modal.on(application.settings.modalHideEventName, function () {
+                $modal.on(modalHideEventName, function () {
                     self.hidePageLoading();
 
-                    if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
-                        application.settings.beforeUnload(template.type, params);
+                    var beforeUnload = application.settings.beforeUnload;
+
+                    if (flash.utils.object.isFunction(beforeUnload)) {
+                        beforeUnload(template.type, params);
                     }
                 });
 
-                $modal.on(application.settings.modalHiddenEventName, function () {
+                $modal.on(modalHiddenEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
                         template.callback(false);
                     }
@@ -494,10 +545,10 @@
 
                     // Unbind the show/shown/hide/hidden events from the modal
                     $modal
-                        .off(application.settings.modalShowEventName)
-                        .off(application.settings.modalShownEventName)
-                        .off(application.settings.modalHideEventName)
-                        .off(application.settings.modalHiddenEventName);
+                        .off(modalShowEventName)
+                        .off(modalShownEventName)
+                        .off(modalHideEventName)
+                        .off(modalHiddenEventName);
 
                     // Remove the modal from the DOM
                     $modal.remove();
@@ -599,19 +650,15 @@
 
             /**
              * Add/update a meta tag
-             * @param {String} name - The meta tag name attribute value
-             * @param {String} content - The meta tag content attribute value
+             * @param {Object} attr - The meta tag attributes
              */
-            self.addMetaTag = function (name, content) {
-                var $currentMetaTag = $("meta[name='" + name + "']");
+            self.addMetaTag = function (attr) {
+                self.removeMetaTag(attr);
 
-                if (!$currentMetaTag.length) {
-                    $currentMetaTag = $("<meta/>").attr("name", name);
+                // Create and add the new meta tag
+                var $metaTag = $("<meta/>").attr(attr);
 
-                    $("title").before($currentMetaTag);
-                }
-
-                $currentMetaTag.attr("content", content);
+                $("title").before($metaTag);
             };
 
             // #endregion addMetaTag
@@ -633,12 +680,20 @@
              * Display the page loading element on the view
              */
             self.displayPageLoading = function () {
+                var showPageLoading = application.settings.showPageLoading;
+
                 // Check to make sure to page loading is active
-                if (!application.settings.showPageLoading) {
+                if (!flash.utils.object.isBoolean(showPageLoading) || showPageLoading !== true) {
                     return;
                 }
 
-                var $pageLoading = $("." + application.settings.pageLoadingClassName);
+                var pageLoadingClassName = application.settings.pageLoadingClassName;
+
+                if (!flash.utils.object.isString(pageLoadingClassName)) {
+                    return;
+                }
+
+                var $pageLoading = $("." + pageLoadingClassName);
 
                 if ($pageLoading.length) {
                     $pageLoading.show();
@@ -648,7 +703,7 @@
 
                 var $body = $("body"),
                     $div = $("<div/>", {
-                        "class": application.settings.pageLoadingClassName
+                        "class": pageLoadingClassName
                     });
 
                 $("<span/>").text("Loading...").appendTo($div);
@@ -665,12 +720,20 @@
              * Hide the page loading element from the view
              */
             self.hidePageLoading = function () {
+                var showPageLoading = application.settings.showPageLoading;
+
                 // Check to make sure to page loading is active
-                if (!application.settings.showPageLoading) {
+                if (!flash.utils.object.isBoolean(showPageLoading) || showPageLoading !== true) {
                     return;
                 }
 
-                var $pageLoading = $("." + application.settings.pageLoadingClassName);
+                var pageLoadingClassName = application.settings.pageLoadingClassName;
+
+                if (!flash.utils.object.isString(pageLoadingClassName)) {
+                    return;
+                }
+
+                var $pageLoading = $("." + pageLoadingClassName);
 
                 // Hide the page loading element if it exists
                 if ($pageLoading.length) {
@@ -719,9 +782,15 @@
              * @param {Function} callback - The function that is executed when the template is loaded
              */
             self.loadPage = function (hash, url, title, prefix, params, callback) {
+                var templateContainerElementSelector = application.settings.templateContainerElementSelector;
+
+                if (!flash.utils.object.isString(templateContainerElementSelector)) {
+                   return;
+                }
+
                 var config = {
                     callback: callback,
-                    containerElementSelector: application.settings.templateContainerElementSelector,
+                    containerElementSelector: templateContainerElementSelector,
                     hash: hash,
                     params: params,
                     prefix: prefix,
@@ -758,6 +827,31 @@
 
             // #endregion loadPartial
 
+            // #region removeMetaTag
+
+            /**
+             * Remove a meta tag
+             * @param {Object} attr - The meta tag attributes
+             */
+            self.removeMetaTag = function (attr) {
+                var $currentMetaTag;
+
+                // Check if the meta tag exists using the name/property
+                if (attr.name) {
+                    $currentMetaTag = $("meta[name='" + attr.name + "']");
+                }
+                else if (attr.property) {
+                    $currentMetaTag = $("meta[property='" + attr.property + "']");
+                }
+
+                // Remove the meta tag before adding a new one
+                if ($currentMetaTag && $currentMetaTag.length > 0) {
+                    $currentMetaTag.remove();
+                }
+            };
+
+            // #endregion removeMetaTag
+
             // #region setActiveTab
 
             /**
@@ -780,9 +874,54 @@
              * @param {string} pageTitle - The title of the template page that has been loaded
              */
             self.setDocumentTitle = function (pageTitle) {
-                document.title = pageTitle
-                    ? pageTitle + (application.title ? " | " + application.title : "")
-                    : application.title;
+                var title,
+                    documentTitleFormats = application.settings.documentTitleFormats;
+
+                if (!flash.utils.object.isObject(documentTitleFormats)) {
+                    return;
+                }
+
+                if (pageTitle && pageTitle !== "") {
+                    if ((!application.title || application.title === "") &&
+                        (!application.title.tagline || application.title.tagline === "") &&
+                        (!application.title.name || application.title.name === "")) {
+                        title = pageTitle;
+                    } else {
+                        if (!flash.utils.object.isString(documentTitleFormats.content)) {
+                            return;
+                        }
+
+                        title = documentTitleFormats.content.replace("{pageTitle}", pageTitle);
+
+                        if (flash.utils.object.isString(application.title)) {
+                            title = title.replace("{title}", application.title);
+                        } else {
+                            title = title
+                                .replace("{title}", application.title.name)
+                                .replace("{tagline}", application.title.tagline);
+                        }
+                    }
+                } else {
+                    if (!application.title || flash.utils.object.isString(application.title)) {
+                        title = application.title || "";
+                    } else {
+                        if (!application.title.tagline || application.title.tagline === "") {
+                            title = application.title.name || "";
+                        } else if (!application.title.name || application.title.name === "") {
+                            title = application.title.tagline || "";
+                        } else {
+                            if (!flash.utils.object.isString(documentTitleFormats.main)) {
+                                return;
+                            }
+
+                            title = documentTitleFormats.main
+                                .replace("{title}", application.title.name)
+                                .replace("{tagline}", application.title.tagline)
+                        }
+                    }
+                }
+
+                document.title = title;
             };
 
             // #endregion setDocumentTitle
@@ -811,9 +950,11 @@
 
                 self.displayPageLoading();
 
+                var beforeUnload = application.settings.beforeUnload;
+
                 // Check if pre-defined before unload function is still a function and run it in case it was overloaded by user
-                if (flash.utils.object.isFunction(application.settings.beforeUnload)) {
-                    application.settings.beforeUnload(template.type, params);
+                if (flash.utils.object.isFunction(beforeUnload)) {
+                    beforeUnload(template.type, params);
                 }
 
                 if (flash.utils.object.isFunction(template.callback)) {
@@ -858,8 +999,10 @@
             object.Template.prototype.display = function (preparedHtml, params) {
                 var template = this;
 
-                if (flash.utils.object.isFunction(application.settings.beforeLoad)) {
-                    application.settings.beforeLoad(template.type, preparedHtml, params);
+                var beforeLoad = application.settings.beforeLoad;
+
+                if (flash.utils.object.isFunction(beforeLoad)) {
+                    beforeLoad(template.type, preparedHtml, params);
                 }
 
                 if (template.type === self.types.MODAL) {
@@ -918,7 +1061,7 @@
                 }
 
                 // Remove the script element in order to reduce loading same script after initial load
-                if ($element.is("script")) {
+                if ($element.is("script") || $element.is("link")) {
                     $element.remove();
                 }
 
@@ -941,14 +1084,14 @@
             object.Template.prototype.preload = function (html, params) {
                 var template = this,
                     $html = convertHtmlStringToJqueryObject(html),
-                    elementsToLoad = "script[src],img[src]";
+                    elementsToLoad = "script[src],img[src],link[href]";
 
                 if ($html.find(elementsToLoad).length > 0) {
                     var elementLoadCounter = $html.find(elementsToLoad).length;
 
                     $html.find(elementsToLoad).each(function () {
                         var $element = $(this),
-                            src = $element.attr("src");
+                            src = $element.is("link") ? $element.attr("href") : $element.attr("src");
 
                         if (!src || isResourceLoaded(src)) {
                             template.preloadCallback($html, $element, --elementLoadCounter, params);
@@ -959,6 +1102,10 @@
                                 });
                             } else if ($element.is("script")) {
                                 flash.http.getScript(src, function () {
+                                    template.preloadCallback($html, $element, --elementLoadCounter, params, src);
+                                });
+                            } else if ($element.is("link")) {
+                                flash.http.getCss(src, $element.attr("media"), function () {
                                     template.preloadCallback($html, $element, --elementLoadCounter, params, src);
                                 });
                             }
@@ -1028,8 +1175,10 @@
              * Load google analytics libraries
              */
             self.loadGoogleAnalytics = function () {
+                var googleAnalyticsTrackingCode = application.settings.googleAnalyticsTrackingCode;
+
                 // Only load google analytics if tracking code was supplied
-                if (!flash.utils.object.isString(application.settings.googleAnalyticsTrackingCode)) {
+                if (!flash.utils.object.isString(googleAnalyticsTrackingCode)) {
                     return;
                 }
 
@@ -1040,7 +1189,7 @@
                     m = s.getElementsByTagName(o)[0]; a.async = 1; a.src = g; m.parentNode.insertBefore(a, m);
                 })(window, document, "script", "//www.google-analytics.com/analytics.js", "ga");
 
-                ga("create", application.settings.googleAnalyticsTrackingCode, "auto");
+                ga("create", googleAnalyticsTrackingCode, "auto");
             };
 
             // #endregion loadGoogleAnalytics
@@ -1051,8 +1200,10 @@
              * Send google analytics page view data
              */
             self.sendGoogleAnalyticsPageView = function () {
+                var googleAnalyticsTrackingCode = application.settings.googleAnalyticsTrackingCode;
+
                 // Only send google analytics page view data if tracking code was supplied
-                if (!flash.utils.object.isString(application.settings.googleAnalyticsTrackingCode)) {
+                if (!flash.utils.object.isString(googleAnalyticsTrackingCode)) {
                     return;
                 }
 
@@ -1075,12 +1226,58 @@
         /**
          * Private self executing function containing the routing functions
          */
+
         routing = (function () {
             var self = {},
 
             // #region Private
 
             // #region Objects
+
+            // #region Match
+
+                /**
+                 * The Match object constructor
+                 * @param {String} route - The matching route
+                 * @param {Object} params - The object containing the named parameters
+                 */
+                Match = function (route, params) {
+                    this.route = route;
+                    this.params = params;
+                },
+
+            // #endregion Match
+
+            // #region Route
+
+                /**
+                 * The Route object constructor
+                 * @param {String} hash - The unique identifier of the route
+                 * @param {Object} params - The object containing the parameters
+                 * @param {Object} config - The object containing the route config settings
+                 *      @param {Function} load - The function that is executed to load the template
+                 *      @param {Object} params - The object containing the parameters
+                 *      @param {String} path - The unique identifier of the route
+                 *      @param {Boolean} regex - Does the route contain parameters
+                 *      @param {String} title - The route title used for the document title
+                 *      @param {Function} unload - The function that is executed to unload the template
+                 */
+                Route = function (config) {
+                    this.load = config.load;
+                    this.params = config.params;
+                    this.path = config.path;
+                    this.regex = config.regex;
+                    this.title = config.title;
+                    this.unload = config.unload;
+                },
+
+            // #endregion Route
+
+            // #region currentPath
+
+                currentPath = null,
+
+            // #endregion currentPath
 
             // #region escapedRegexQueryIdentifier
 
@@ -1100,23 +1297,17 @@
 
             // #endregion namedParameterIdentifier
 
-            // #region onLoads
+            // #region popstateCallback
 
-                onLoads = {},
+                popstateCallback = false,
 
-            // #endregion onLoads
+            // #endregion popstateCallback
 
-            // #region onUnloads
+            // #region previousPath
 
-                onUnloads = {},
+                previousPath = null,
 
-            // #endregion onUnloads
-
-            // #region previousRouteHash
-
-                previousRouteHash = null,
-
-            // #endregion previousRouteHash
+            // #endregion previousPath
 
             // #region queryIdentifier
 
@@ -1160,12 +1351,6 @@
 
             // #endregion regexQueryIdentifier
 
-            // #region regexRoutes
-
-                regexRoutes = [],
-
-            // #endregion regexRoutes
-
             // #region regexStartAnchor
 
                 regexStartAnchor = "^",
@@ -1180,256 +1365,217 @@
 
             // #region routePathDivider
 
-                routePathDivider = "/";
+                routePathDivider = "/",
 
             // #endregion routePathDivider
+
+            // #region routePathDivider
+
+                slashSlashProtocol = "//",
+
+            // #endregion routePathDivider
+
+            // #region templates
+
+                routes = [];
+
+            // #endregion templates
 
             // #endregion Objects
 
             // #region Methods
 
-            // #region addOnLoad
+            // #region get
 
             /**
-             * Add the load method to the client browser session for the specified unique hash
-             * @param {String} hash - The unique identifier of the template
-             * @param {String} routeHash - The requested route hash
+             * Method to get the route object
+             * @param {String} path - The route identifier, must be unique
              * @param {String} url - The url of the view (html) to load
-             * @param {String} title - The template title used for the document title
-             * @param {String} prefix - The prefix used for the controller and tab objects
+             * @param {String} title - The title of page
+             * @param {String} prefix - The prefix for the controller and tab
+             * @param {Boolean} regex - Does the route contain parameters
              */
-            function addOnLoad(hash, routeHash, url, title, prefix) {
-                onLoads[hash] = function (params, callback) {
-                    templating.loadPage(routeHash, url, title, prefix, params, callback);
-                };
-            }
-
-            // #endregion addOnLoad
-
-            // #region addOnUnload
-
-            /**
-             * Add the unload method to the client browser session for the specified unique hash
-             * @param {String} hash - The unique identifier of the template
-             * @param {String} routeHash - The requested route hash
-             */
-            function addOnUnload(hash, routeHash) {
-                onUnloads[hash] = function (params) {
-                    templating.unload(routeHash, params);
-                };
-            }
-
-            // #endregion addOnUnload
-
-            // #region addRegexRoute
-
-            /**
-             * Add the regex route to the browser session
-             * @param {String} hash - The unique identifier of the template
-             * @param {Object} params - The object containing the parameters
-             * @returns {String} The updated hash with regex match strings
-             */
-            function addRegexRoute(hash, params) {
-                hash = regexStartAnchor + hash.replace(regexQueryIdentifier, escapedRegexQueryIdentifier);
-
-                // If hash containes non named parameters
-                if (hash.indexOf(regexNonNamedParameterString) >= 0) {
-                    hash = hash.replace(regexNonNamedParameters, regexParametersMatchString);
-
-                    regexRoutes.push(new object.Route(hash));
-                    // Else the hash contains named parameters
-                } else {
-                    hash = hash.replace(regexNamedParameters, regexParametersMatchString);
-
-                    regexRoutes.push(new object.Route(hash, params));
-                }
-
-                return hash;
-            }
-
-            // #endregion addRegexRoute
-
-            // #region executeOnLoad
-
-            /**
-             * Execute the load method for the requested route hash
-             * @param {Function} onLoad - The matching route onLoad function
-             * @param {String} routeHash - The requested route hash
-             * @param {Object} params - The object containing the parameters
-             */
-            function executeOnLoad(onLoad, routeHash, params) {
-                onLoad(params, function () {
-                    previousRouteHash = routeHash;
+            function get(path, url, title, prefix, regex) {
+                var route = new Route({
+                    path: path,
+                    title: title
                 });
-            }
 
-            // #endregion executeOnLoad
+                // Handle the route if it is a regex
+                if (regex) {
+                    if (path.indexOf(regexNonNamedParameterString) < 0) {
+                        var params = path.match(regexNamedParameters),
+                            hasQueryString = path.indexOf(queryIdentifier) >= 0;
 
-            // #region getRoute
+                        if (params) {
+                            for (var i = 0; i < params.length; i++) {
+                                var param = params[i],
+                                    paramName = param.slice(1, -1);
 
-            /**
-             * Get the route object containing the unique hash and named params
-             * @param {String} hash - The unique identifier of the template
-             * @returns {Object} The route object
-             */
-            function getRoute(hash) {
-                // Get the params by name and update the hash if named parameters are present in the querystring
-                if (hash.indexOf(regexNonNamedParameterString) < 0) {
-                    var params = hash.match(regexNamedParameters),
-                        hasQueryString = hash.indexOf(queryIdentifier) >= 0;
+                                if (hasQueryString) {
+                                    var queryStringParam = paramName + queryStringNameValueSeparator + param;
 
-                    if (!params) {
-                        return new object.Route(hash);
-                    }
+                                    // Add the name value pair string (name=value) to the hash
+                                    path = path.replace(param, queryStringParam);
+                                }
 
-                    for (var i = 0; i < params.length; i++) {
-                        var param = params[i],
-                            paramName = param.slice(1, -1);
-
-                        if (hasQueryString) {
-                            var queryStringParam = paramName + queryStringNameValueSeparator + param;
-
-                            // Add the name value pair string (name=value) to the hash
-                            hash = hash.replace(param, queryStringParam);
-                        }
-
-                        params[i] = paramName;
-                    }
-
-                    return new object.Route(hash, params);
-                }
-
-                return new object.Route(hash);
-            }
-
-            // #endregion getRoute
-
-            // #region regexMatch
-
-            /**
-             * Match the requested route hash with an existing unique regex hash
-             * @param {String} routeHash - The requested route hash
-             * @returns {Object} The match object
-             */
-            function regexMatch(routeHash) {
-                for (var i = regexRoutes.length - 1; i >= 0; i--) {
-                    var route = regexRoutes[i],
-                        regExp = new RegExp(route.hash);
-
-                    if (!regExp.test(routeHash)) {
-                        continue;
-                    }
-
-                    var map,
-                        params = routeHash.match(regExp);
-
-                    // Remove the static part of the hash
-                    params = params.slice(1, params.length);
-
-                    // Get the hashmap of named parameters if they are part of the unique hash
-                    if (route.params) {
-                        map = {};
-
-                        for (var j = 0; j < route.params.length; j++) {
-                            if (!route.params[j] || !params[j]) {
-                                break;
+                                params[i] = paramName;
                             }
 
-                            map[route.params[j]] = params[j];
+                            route.params = params;
                         }
                     }
 
-                    return new object.Match(true, route.hash, map || params);
+                    route.regex = true;
+                    route.path = getRegexPath(path);
                 }
 
-                return new object.Match(false);
+                route.load = function (params, callback) {
+                    templating.loadPage(path, url, title, prefix, params, callback);
+                };
+
+                route.unload = function (params) {
+                    templating.unload(path, params);
+                };
+
+                return route;
             }
 
-            // #endregion regexMatch
+            // #endregion get
 
-            // #region runOnLoad
+            // #region getMatch
 
             /**
-             * Run the load method for the requested route hash
-             * @param {String} routeHash - The requested route hash
-             * @param {String} routeHashLower - The requested route hash in lower case form
+             * Try to find the matching route in the client browser session
+             * @param {String} path - The unique identifier of the route
+             * @returns {Object} The match object containing the route and params
              */
-            function runOnLoad(routeHash, routeHashLower) {
-                var onLoad = onLoads[routeHash],
-                    onLoadLower = onLoads[routeHashLower];
+            function getMatch(path) {
+                var pathLower = toLowerCase(path);
 
-                // Try to execute the non altered request hash load method
-                if (onLoad) {
-                    executeOnLoad(onLoad, routeHash);
-                    // Try to execute the lower cased request hash load method
-                } else if (onLoadLower) {
-                    executeOnLoad(onLoadLower, routeHashLower);
-                    // Try to execute the regex request hash load method
-                } else {
-                    var match = regexMatch(routeHash);
+                for (var i = routes.length - 1; i >= 0; i--) {
+                    var route = routes[i];
 
-                    // Non altered regex request hash
-                    if (match.success === true) {
-                        executeOnLoad(onLoads[match.hash], routeHash, match.params);
-                        // Lower cased regex request hash
-                    } else {
-                        var matchLower = regexMatch(routeHashLower);
+                    if (route.regex === true) {
+                        var regExp = new RegExp(route.path);
 
-                        if (matchLower.success === true) {
-                            executeOnLoad(onLoads[matchLower.hash], routeHashLower, matchLower.params);
-                        } else {
-                            flash.utils.displayErrorPage(flash.http.statusCodes.NOTFOUND);
+                        if (!regExp.test(path) && !regExp.test(pathLower)) {
+                            continue;
                         }
+
+                        var map,
+                            params = path.match(regExp);
+
+                        // Remove the static part of the hash
+                        params = params.slice(1, params.length);
+
+                        // Get the hashmap of named parameters if they are part of the unique hash
+                        if (route.params) {
+                            map = {};
+
+                            for (var j = 0; j < route.params.length; j++) {
+                                if (!route.params[j] || !params[j]) {
+                                    break;
+                                }
+
+                                map[route.params[j]] = params[j];
+                            }
+                        }
+
+                        return new Match(route, map || params);
+                    } else if (path === route.path || pathLower === route.path) {
+                        return new Match(route);
                     }
                 }
+
+                return null;
             }
 
-            // #endregion runOnLoad
+            // #endregion getMatch
 
-            // #region runOnUnload
+            // #region getRegexPath
 
             /**
-             * Execute the unload method for the previously requested route hash
-             * @param {String} routeHash - The previously requested route hash
+             * Method to get the regex route path
+             * @param {String} path - The route identifier, must be unique
              */
-            function runOnUnload(routeHash) {
-                var onUnload = onUnloads[routeHash];
+            function getRegexPath(path) {
+                return regexStartAnchor + path.replace(regexQueryIdentifier, escapedRegexQueryIdentifier).replace(
+                    path.indexOf(regexNonNamedParameterString) >= 0 ? regexNonNamedParameters : regexNamedParameters,
+                    regexParametersMatchString);
+            }
 
-                // Try to execute request hash unload method
-                if (onUnload) {
-                    onUnload();
-                    // Try to execute the regex request hash unload method
+            // #endregion getRegexPath
+
+            // #region load
+
+            /**
+             * Method to load the requested route path
+             * @param {String} path - The requested route path
+             */
+            function load(path) {
+                currentPath = self.buildPath(path);
+
+                var match = getMatch(currentPath);
+
+                if (match !== null) {
+                    match.route.load(match.params, function (load) {
+                        if (load !== true) {
+                            return;
+                        }
+
+                        var type = flash.utils.object.isBoolean(self.html5Mode)
+                            ? (self.html5Mode === true && currentPath === routePathDivider) ||
+                            (self.html5Mode === false && currentPath === hashPrefix)
+                                ? "website"
+                                : "article"
+                            : null;
+
+                        if (flash.utils.object.isBoolean(self.html5Mode) && self.html5Mode === true) {
+                            if (popstateCallback === true) {
+                                popstateCallback = false;
+                            } else if (!previousPath || previousPath === currentPath) {
+                                history.replaceState({ path: currentPath }, match.route.title, currentPath);
+                            } else {
+                                history.pushState({ path: currentPath }, match.route.title, currentPath);
+                            }
+                        }
+
+                        previousPath = currentPath;
+
+                        templating.addMetaTag({ property: "og:title", content: document.title });
+                        templating.addMetaTag({ property: "og:type", content: type });
+                        templating.addMetaTag({ property: "og:url", content: window.location.href });
+                    });
                 } else {
-                    var match = regexMatch(routeHash);
-
-                    if (match.success) {
-                        onUnloads[match.hash](match.params);
-                    }
+                    flash.utils.displayErrorPage(flash.http.statusCodes.NOTFOUND);
                 }
             }
 
-            // #endregion runOnUnload
+            // #endregion load
 
             // #region toLowerCase
 
             /**
-             * Lower case the route hash, not incuding the querystring if it exists
-             * @param {String} routeHash - The route hash unique identifier
-             * @returns {String} The route hash in lower case
+             * Lower case the route path, not incuding the querystring if it exists
+             * @param {String} path - The route path unique identifier
+             * @returns {String} The route path in lowercase
              */
-            function toLowerCase(routeHash) {
-                if (!routeHash) {
+            function toLowerCase(path) {
+                if (!path) {
                     return null;
                 }
 
-                if (application.settings.caseSensitiveRoutes) {
-                    return routeHash;
+                var caseSensitiveRoutes = application.settings.caseSensitiveRoutes;
+
+                if (flash.utils.object.isBoolean(caseSensitiveRoutes) && caseSensitiveRoutes === true) {
+                    return path;
                 }
 
-                var queryIdentifierIndex = routeHash.indexOf(queryIdentifier),
-                    path = queryIdentifierIndex >= 0 ? routeHash.substr(0, queryIdentifierIndex) : routeHash,
-                    queryString = queryIdentifierIndex >= 0 ? routeHash.substr(queryIdentifierIndex) : "",
-                    routeParts = path.split(routePathDivider);
+                var queryIdentifierIndex = path.indexOf(queryIdentifier),
+                    origin = queryIdentifierIndex >= 0 ? path.substr(0, queryIdentifierIndex) : path,
+                    queryString = queryIdentifierIndex >= 0 ? path.substr(queryIdentifierIndex) : "",
+                    routeParts = origin.split(routePathDivider);
 
                 for (var i = 0; i < routeParts.length; i++) {
                     // Ignore named parameters to keep case sensitivity
@@ -1445,15 +1591,45 @@
 
             // #endregion toLowerCase
 
+            // #region unload
+
+            /**
+             * Method to unload the previously requested route path
+             */
+            function unload() {
+                var match = getMatch(previousPath);
+
+                if (match !== null) {
+                    match.route.unload(match.params);
+                }
+
+                $(document).trigger("flash.routing.unload");
+            }
+
+            // #endregion unload
+
             // #endregion Methods
 
             // #endregion Private
 
             // #region Public
 
+            // #region Objects
+
+            // #region html5Mode
+
+            /**
+             * @returns {Boolean} Whether the current routing method is HTML5Mode or hash
+             */
+            self.html5Mode = false;
+
+            // #endregion html5Mode
+
+            // #endregion Objects
+
             // #region Methods
 
-            // #region addRoute
+            // #region add
 
             /**
              * Add route definition
@@ -1464,42 +1640,51 @@
              * @param {Boolean} regex - Does the route contain parameters
              * @param {Boolean} caseSensitive - Is the route case sensitive
              */
-            self.addRoute = function (path, url, title, prefix, regex, caseSensitive) {
-                var builtHash = self.buildHash(path);
+            self.add = function (path, url, title, prefix, regex, caseSensitive) {
+                if (!flash.utils.object.isString(url) ||
+                    !flash.utils.object.isString(prefix)) {
+                    return null;
+                }
 
-                if (!builtHash) {
+                path = self.buildPath(path);
+
+                if (!path) {
                     return;
                 }
 
-                // Assign the appropriate hash, depending on route case sensitivity
-                var hash = caseSensitive ? builtHash : toLowerCase(builtHash),
-                    routeHash = hash;
-
-                // Handle the route if it is a regex
-                if (regex) {
-                    var route = getRoute(hash);
-
-                    routeHash = route.hash;
-
-                    hash = addRegexRoute(route.hash, route.params);
+                // Assign the appropriate path, depending on route case sensitivity
+                if (!caseSensitive) {
+                    path = toLowerCase(path);
                 }
 
-                addOnLoad(hash, routeHash, url, title, prefix);
-                addOnUnload(hash, routeHash);
+                var route = get(path, url, title, prefix, regex);
+
+                routes.push(route);
             };
 
-            // #endregion addRoute
+            // #endregion add
 
-            // #region buildHash
+            // #region buildPath
 
             /**
              * Build the hash to ensure a hashtag/slash prefix
              * @param {String} path - The route identifier, must be unique
              * @returns {String} The updated hash containing the hashtag/slash prefix
              */
-            self.buildHash = function (path) {
+            self.buildPath = function (path) {
                 // Ensure the path is a string
-                if (flash.utils.object.isString(path)) {
+                if (!flash.utils.object.isString(path)) {
+                    return null;
+                }
+
+                if (flash.utils.object.isBoolean(self.html5Mode) && self.html5Mode === true) {
+                    // Return the path if the hashtag/slash prefix exists
+                    if (path.indexOf(routePathDivider) === 0) {
+                        return path;
+                    }
+
+                    return routePathDivider + path;
+                } else {
                     // Return the path if the hashtag/slash prefix exists
                     if (path.indexOf(hashPrefix) === 0) {
                         return path;
@@ -1507,7 +1692,7 @@
 
                     var hashtag = "#",
                         hashtagIndex = path.indexOf(hashtag),
-                        slashIndex = path.indexOf("/");
+                        slashIndex = path.indexOf(routePathDivider);
 
                     // Neither hashtag nor slash exist, prepend to the hash
                     if (hashtagIndex !== 0 && slashIndex !== 0) {
@@ -1523,12 +1708,12 @@
                     if (hashtagIndex === 0 && slashIndex !== 1) {
                         return hashPrefix + path.substring(1);
                     }
-                }
 
-                return null;
+                    return null
+                }
             };
 
-            // #endregion buildHash
+            // #endregion buildPath
 
             // #region getUnauthorizedRedirectPath
 
@@ -1537,8 +1722,13 @@
              * @returns {String} The unauthorized redirect path including return url, when applicable
              */
             self.getUnauthorizedRedirectPath = function () {
-                var returnUrl = encodeURIComponent(window.location.href),
-                    unauthorizedRedirectPath = application.settings.unauthorizedRedirectPath;
+                var unauthorizedRedirectPath = application.settings.unauthorizedRedirectPath;
+
+                if (!flash.utils.object.isString(unauthorizedRedirectPath)) {
+                    return null;
+                }
+
+                var returnUrl = encodeURIComponent(window.location.href);
 
                 // Only attach the return URL if current page is not an error page
                 if (returnUrl.indexOf("error") < 0) {
@@ -1552,26 +1742,78 @@
 
             // #endregion getUnauthorizedRedirectPath
 
+            // #region init
+
+            /**
+             * Initialization of the routing to handle first load
+             */
+            self.init = function () {
+                if (flash.utils.object.isBoolean(routing.html5Mode) && routing.html5Mode === true) {
+                    var href = window.location.href,
+                        path = href.replace(window.location.origin, "");
+
+                    load(path);
+
+                    // Bind the popstate event
+                    popstate.bind(function (e) {
+                        var state = e.originalEvent.state;
+
+                        if (state && state.path) {
+                            popstateCallback = true;
+
+                            unload();
+                            load(state.path);
+                        }
+                    });
+                } else {
+                    // Bind the routing listener to the hashchange event
+                    hashchange.bind(function () {
+                        if (reloadRequested) {
+                            return;
+                        }
+
+                        unload();
+                        load(window.location.hash || hashPrefix);
+                    });
+
+                    load(window.location.hash || hashPrefix);
+                }
+            };
+
+            // #endregion init
+
             // #region listener
 
             /**
              * Listener to be executed when hashchange event is fired
              */
             self.listener = function () {
-                if (reloadRequested) {
+                var anchorExclusionRoutingSelector = application.settings.anchorExclusionRoutingSelector;
+
+                if (!flash.utils.object.isString(anchorExclusionRoutingSelector)) {
                     return;
                 }
 
-                var routeHash = window.location.hash;
+                var anchorSelector = "a:not(" + anchorExclusionRoutingSelector + ")";
 
-                if (!routeHash) {
-                    routeHash = hashPrefix;
-                }
+                $(document).off("click.flash", anchorSelector).on("click.flash", anchorSelector, function (e) {
+                    e.preventDefault();
 
-                var routeHashLower = toLowerCase(routeHash);
+                    var path = $(this).attr("href");
 
-                runOnUnload(previousRouteHash);
-                runOnLoad(routeHash, routeHashLower);
+                    if (flash.utils.object.isBoolean(self.html5Mode) && self.html5Mode === true) {
+                        unload();
+                        load(path);
+                    } else {
+                        path = self.buildPath(path);
+
+                        if (window.location.hash != "" && path === window.location.hash) {
+                            routing.redirect(path);
+                        } else {
+                            window.location = self.buildPath(path);
+                        }
+                    }
+                });
             };
 
             // #endregion listener
@@ -1583,28 +1825,33 @@
              * @param {String} path - The route identifier to load
              */
             self.redirect = function (path) {
-                var slashSlashIndex = path.indexOf("//");
+                if (!flash.utils.object.isString(path)) {
+                    return;
+                }
 
-                // Check if url is fully defined main url (account for http: or https:)
-                if (slashSlashIndex >= 0 && slashSlashIndex <= 6) {
-                    // Build the url with the base root path
-                    path = flash.utils.buildUrl(path);
+                var slashSlashIndex = path.indexOf(slashSlashProtocol);
+
+                // Check if the path is not an absolute url (account for http: or https:)
+                if (slashSlashIndex < 0 || slashSlashIndex > 6) {
+                    if (flash.utils.object.isBoolean(self.html5Mode) && self.html5Mode === true) {
+                        unload();
+                        load(path);
+                    } else {
+                        path = self.buildPath(path);
+
+                        var pathLower = toLowerCase(path);
+
+                        if (window.location.hash === path || window.location.hash === pathLower) {
+                            unload();
+                            load(path);
+                        } else {
+                            window.location.hash = path;
+                        }
+                    }
+                } else {
+                    templating.displayPageLoading();
 
                     window.location = path;
-                } else {
-                    var builtHash = self.buildHash(path),
-                        builtHashLower = toLowerCase(builtHash);
-
-                    if (!builtHash) {
-                        return;
-                    }
-
-                    if (window.location.hash === builtHash || window.location.hash === builtHashLower) {
-                        runOnUnload(previousRouteHash);
-                        runOnLoad(builtHash, builtHashLower);
-                    } else {
-                        window.location.hash = builtHash;
-                    }
                 }
             };
 
@@ -1617,25 +1864,30 @@
              * @param {String} path - The route identifier to load
              */
             self.reload = function (path) {
-                templating.displayPageLoading();
-
-                reloadRequested = true;
-
-                var slashSlashIndex = path.indexOf("//");
-
-                // Check if the path is not a fully defined url or fully defined url is not main (account for http: or https:)
-                if (slashSlashIndex < 0 || slashSlashIndex > 6) {
-                    path = self.buildHash(path);
+                if (!flash.utils.object.isString(path)) {
+                    return;
                 }
 
-                // Build the url with the base root path
-                path = flash.utils.buildUrl(path);
+                templating.displayPageLoading();
+
+                var slashSlashIndex = path.indexOf(slashSlashProtocol);
+
+                if (!flash.utils.object.isBoolean(self.html5Mode) || self.html5Mode !== true) {
+                    reloadRequested = true;
+                }
+
+                // Check if the path is not an absolute url (account for http: or https:)
+                if (slashSlashIndex < 0 || slashSlashIndex > 6) {
+                    path = self.buildPath(path);
+                }
 
                 window.location = path;
 
-                // Reload page if a hash prefix exists, since this would trigger a hash change only
-                if (path.indexOf(hashPrefix) >= 0) {
-                    window.location.reload();
+                if (!flash.utils.object.isBoolean(self.html5Mode) || self.html5Mode !== true) {
+                    // Reload page if a hash prefix exists, since this would trigger a hash change only
+                    if (path.indexOf(hashPrefix) >= 0) {
+                        window.location.reload();
+                    }
                 }
             };
 
@@ -1658,105 +1910,125 @@
 
         // #region Objects
 
-        // #region version
+        Object.defineProperties(flash, {
+            // #region $alertTargetElement
 
-        /**
-         * @returns {String} The flash version
-         */
-        Object.defineProperty(flash, "version", { get: function () { return "1.1.0"; } });
+            /**
+             * @returns {Object} The current template target jQuery object for alerts
+             */
+            $alertTargetElement: {
+                get: function () {
+                    var alertModalTargetElementSelector = application.settings.alertModalTargetElementSelector,
+                        alertPageTargetElementSelector = application.settings.alertPageTargetElementSelector;
 
-        // #endregion version
+                    if (!flash.utils.object.isString(alertModalTargetElementSelector) ||
+                        !flash.utils.object.isString(alertPageTargetElementSelector)) {
+                        return null;
+                    }
 
-        // #region title
+                    var elementSelector = flash.utils.isModalActive()
+                        ? alertModalTargetElementSelector
+                        : alertPageTargetElementSelector;
 
-        /**
-         * @returns {String} The application title
-         */
-        Object.defineProperty(flash, "title", { get: function () { return application.title; } });
+                    return $(elementSelector);
+                }
+            },
 
-        // #endregion title
+            // #endregion $alertTargetElement
 
-        // #region activeTab
+            // #region $parentElement
 
-        /**
-         * @returns {String} The application active tab
-         */
-        Object.defineProperty(flash, "activeTab", { get: function () { return application.activeTab; } });
+            /**
+             * @returns {Object} The current template parent jQuery object
+             */
+            $parentElement: {
+                get: function () {
+                    var modalParentElementSelector = application.settings.modalParentElementSelector,
+                        documentParentElementSelector = application.settings.documentParentElementSelector;
 
-        // #endregion activeTab
+                    if (!flash.utils.object.isString(modalParentElementSelector) ||
+                        !flash.utils.object.isString(documentParentElementSelector)) {
+                        return null;
+                    }
 
-        // #region $templateContainerElement
+                    var elementSelector = flash.utils.isModalActive()
+                        ? modalParentElementSelector
+                        : documentParentElementSelector;
 
-        /**
-         * @returns {Object} The application container jQuery object for template content
-         */
-        Object.defineProperty(flash, "$templateContainerElement", {
-            get: function () {
-                return $(application.settings.templateContainerElementSelector);
-            }
+                    return $(elementSelector);
+                }
+            },
+
+            // #endregion $parentElement
+
+            // #region $templateContainerElement
+
+            /**
+             * @returns {Object} The application container jQuery object for template content
+             */
+            $templateContainerElement: {
+                get: function () {
+                    var templateContainerElementSelector = application.settings.templateContainerElementSelector;
+
+                    if (!flash.utils.object.isString(templateContainerElementSelector)) {
+                        return;
+                    }
+
+                    return $(templateContainerElementSelector);
+                }
+            },
+
+            // #endregion $templateContainerElement
+
+            // #region activeTab
+
+            /**
+             * @returns {String} The application active tab
+             */
+            activeTab: { get: function () { return application.activeTab; } },
+
+            // #endregion activeTab
+
+            // #region statusMessage
+
+            /**
+             * @returns {Object} The application status message object
+             */
+            statusMessage: { get: function () { return application.statusMessage; } },
+
+            // #endregion statusMessage
+
+            // #region templateContainerElementNode
+
+            /**
+             * @returns {Object} The application container element's node for template content
+             */
+            templateContainerElementNode: {
+                get: function () {
+                    return flash.$templateContainerElement.length > 0 ? flash.$templateContainerElement[0] : null;
+                }
+            },
+
+            // #endregion templateContainerElementNode
+
+            // #region title
+
+            /**
+             * @returns {String} The application title
+             */
+            title: { get: function () { return application.title; } },
+
+            // #endregion title
+
+            // #region version
+
+            /**
+             * @returns {String} The flash version
+             */
+            version: { value: "1.1.0" }
+
+            // #endregion version
         });
-
-        // #endregion $templateContainerElement
-
-        // #region templateContainerElementNode
-
-        /**
-         * @returns {Object} The application container element's node for template content
-         */
-        Object.defineProperty(flash, "templateContainerElementNode", {
-            get: function () {
-                return flash.$templateContainerElement.length > 0 ? flash.$templateContainerElement[0] : null;
-            }
-        });
-
-        // #endregion templateContainerElementNode
-
-        // #region $parentElement
-
-        /**
-         * @returns {Object} The current template parent jQuery object
-         */
-        Object.defineProperty(flash, "$parentElement", {
-            get: function () {
-                var elementSelector = flash.utils.isModalActive()
-                    ? application.settings.modalParentElementSelector
-                    : application.settings.documentParentElementSelector;
-
-                return $(elementSelector);
-            }
-        });
-
-        // #endregion $parentElement
-
-        // #region $alertTargetElement
-
-        /**
-         * @returns {Object} The current template target jQuery object for alerts
-         */
-        Object.defineProperty(flash, "$alertTargetElement", {
-            get: function () {
-                var elementSelector = flash.utils.isModalActive()
-                    ? application.settings.alertModalTargetElementSelector
-                    : application.settings.alertPageTargetElementSelector;
-
-                return $(elementSelector);
-            }
-        });
-
-        // #endregion $alertTargetElement
-
-        // #region statusMessage
-
-        /**
-         * @returns {Object} The application status message object
-         */
-        Object.defineProperty(flash, "statusMessage", {
-            get: function () {
-                return application.statusMessage;
-            }
-        });
-
-        // #endregion statusMessage
 
         // #endregion Objects
 
@@ -1777,7 +2049,7 @@
 
             if (options) {
                 // Merge the default settings with the supplied options
-                $.extend(application.settings, options);
+                $.extend(true, application.settings, options);
             }
 
             if (resources) {
@@ -1797,7 +2069,7 @@
 
                     // Check if the path is not a fully defined url or fully defined url is not main (account for http: or https:)
                     if (slashSlashIndex < 0 || slashSlashIndex > 6) {
-                        unauthorizedRedirectPath = routing.buildHash(unauthorizedRedirectPath);
+                        unauthorizedRedirectPath = routing.buildPath(unauthorizedRedirectPath);
                     }
 
                     return application.resources.errorMessages.UNAUTHORIZED.replace(
@@ -1806,32 +2078,16 @@
                 }
             });
 
+            flash.template.addMetaTag({ name: "generator", content: "Flash " + flash.version });
+
             // Load google analytics tracking libraries
             tracking.loadGoogleAnalytics();
 
             // Remove the noscript element if one exists to reduce size of DOM
             $("noscript").remove();
 
-            // Check if user supplied position fixed elements for mobile
-            if (flash.utils.object.isString(application.settings.mobilePositionFixedElementSelector)) {
-                // On focus and blur for form elements, update position for fixed elements as virtual keyboard causes
-                // issues
-                $(document).on("focus", "input, textarea, select", function () {
-                    if (flash.utils.isBrowserMobile()) {
-                        $(application.settings.mobilePositionFixedElementSelector).css("position", "absolute");
-                    }
-                }).on("blur", "input, textarea, select", function () {
-                    if (flash.utils.isBrowserMobile()) {
-                        $(application.settings.mobilePositionFixedElementSelector).removeAttr("style");
-                    }
-                });
-            }
-
-            // Bind the routing listener to the hashchange event
-            hashchange.bind(routing.listener);
-
-            // Execute the listener based on the current hash
-            routing.listener();
+            // Initialize routing
+            routing.init();
         };
 
         // #endregion run
@@ -2187,7 +2443,7 @@
                 // Configure HTTP request based on verb
                 if (verb === verbs.DELETE || verb === verbs.GET) {
                     config.cache = false;
-                    config.async = false;
+                    config.async = true;
                 }
                 else if (verb === verbs.POST || verb === verbs.PUT) {
                     config.data = obj;
@@ -2263,7 +2519,9 @@
 
                     executeCallback = true;
                 } else if (jqXhr.status === self.statusCodes.UNAUTHORIZED) {
-                    if (application.settings.unauthroizedAutoRedirect) {
+                    var unauthroizedAutoRedirect = application.settings.unauthroizedAutoRedirect;
+
+                    if (flash.utils.object.isBoolean(unauthroizedAutoRedirect) && unauthroizedAutoRedirect === true) {
                         var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
 
                         routing.reload(unauthorizedRedirectPath);
@@ -2368,6 +2626,47 @@
 
             // #endregion get
 
+            // #region getCss
+
+            /**
+             * Load a CSS file from the server using a GET HTTP request
+             * @param {String} href - The source of the css to load
+             * @param {String} media - The media type of the css to load
+             * @param {Function} callback - The function that is executed when the request completes
+             */
+            self.getCss = function (href, media, callback) {
+                var styleSheet = document.createElement("link"),
+                    head = document.getElementsByTagName("head")[0];
+
+                styleSheet.rel = "stylesheet";
+                styleSheet.href = href;
+                styleSheet.media = "only x";
+
+                head.appendChild(styleSheet);
+
+                var interval = setInterval(function () {
+                    var sheets = document.styleSheets;
+
+                    for (var i = 0; i < sheets.length; i++) {
+                        if (sheets[i].href !== styleSheet.href) {
+                            continue;
+                        }
+
+                        clearInterval(interval);
+
+                        styleSheet.media = media || "all";
+
+                        break;
+                    }
+                });
+
+                if (flash.utils.object.isFunction(callback)) {
+                    callback();
+                }
+            };
+
+            // #endregion getCss
+
             // #region getImage
 
             /**
@@ -2458,6 +2757,32 @@
 
             // #region Public
 
+            // #region Objects
+
+            Object.defineProperties(self, {
+                // #region html5Mode
+
+                /**
+                 * @returns {Boolean} Whether the current routing method is HTML5Mode or hash
+                 */
+                html5Mode: {
+                    get: function () {
+                        return routing.html5Mode;
+                    },
+                    set: function (value) {
+                        var historyApiSupport = !!(window.history && history.pushState);
+
+                        if (historyApiSupport) {
+                            routing.html5Mode = value;
+                        }
+                    }
+                }
+
+                // #endregion html5Mode
+            });
+
+            // #endregion Objects
+
             // #region Methods
 
             // #region add
@@ -2471,7 +2796,7 @@
              * @param {Boolean} regex - Does the route contain parameters
              * @param {Boolean} caseSensitive - Is the route case sensitive
              */
-            self.add = routing.addRoute;
+            self.add = routing.add;
 
             // #endregion add
 
@@ -2530,8 +2855,7 @@
 
             /**
              * Add/update a meta tag
-             * @param {String} name - The meta tag name attribute value
-             * @param {String} content - The meta tag content attribute value
+             * @param {Object} attr - The meta tag attributes
              */
             self.addMetaTag = templating.addMetaTag;
 
@@ -2623,6 +2947,16 @@
             self.loadPartial = templating.loadPartial;
 
             // #endregion loadPartial
+
+            // #region removeMetaTag
+
+            /**
+             * Add/update a meta tag
+             * @param {Object} attr - The meta tag attributes
+             */
+            self.removeMetaTag = templating.removeMetaTag;
+
+            // #endregion removeMetaTag
 
             // #region setActiveTab
 
@@ -2872,8 +3206,7 @@
                 var baseRootPath = application.settings.baseRootPath;
                 var slashSlashIndex = url.indexOf("//");
 
-                // Return url if fully defined url is main (account for http: or https:), not a string or already contains
-                // base root path
+                // Return url if absolute (account for http: or https:), not a string or already contains base root path
                 if ((slashSlashIndex >= 0 && slashSlashIndex <= 6) ||
                     !self.object.isString(baseRootPath) ||
                     url.indexOf(baseRootPath) === 0) {
@@ -2956,6 +3289,10 @@
             self.displayErrorPage = function (message) {
                 var errorPath = application.settings.errorPath;
 
+                if (!self.object.isString(errorPath) && !self.object.isObject(errorPath)) {
+                    return;
+                }
+
                 if (self.object.isString(message)) {
                     var path = self.object.isString(errorPath) ? errorPath : errorPath.defaultPath;
 
@@ -2980,9 +3317,15 @@
              * @param {String} description - The detailed description of the alert
              */
             self.displayMessagePage = function (type, message, description) {
+                var messagePath = application.settings.messagePath;
+
+                if (!self.object.isString(messagePath)) {
+                    return;
+                }
+
                 application.statusMessage = new object.StatusMessage(type, message, description);
 
-                routing.redirect(application.settings.messagePath);
+                routing.redirect(messagePath);
             };
 
             // #endregion displayMessagePage
@@ -3198,10 +3541,11 @@
                 }
 
                 var targetElementPosition = $targetElement.offset(),
+                    staticHeaderHeight = application.settings.staticHeaderHeight,
                     // Check if a static header height was supplied, otherwise use the template container element to
                     // calculate top offset
-                    topOffset = self.object.isNumber(application.settings.staticHeaderHeight)
-                        ? application.settings.staticHeaderHeight
+                    topOffset = self.object.isNumber(staticHeaderHeight)
+                        ? staticHeaderHeight
                         : flash.$templateContainerElement.length > 0
                             ? flash.$templateContainerElement.offset().top
                             : 0,
@@ -3250,22 +3594,36 @@
                     return;
                 }
 
+                var showButtonLoading = application.settings.showButtonLoading,
+                    buttonLoadingDisabledClassName = application.settings.buttonLoadingDisabledClassName,
+                    buttonLoadingClassName = application.settings.buttonLoadingClassName;
+
+                if (!self.object.isBoolean(showButtonLoading) ||
+                    !self.object.isString(buttonLoadingDisabledClassName) ||
+                    !self.object.isString(buttonLoadingClassName)) {
+                    log.error(
+                        "application.settings.buttonLoadingClassName is not properly set.",
+                        "flash.utils.toggleButton");
+
+                    return;
+                }
+
                 if ($button.attr(disabledAttrName)) {
                     $button.attr(disabledAttrName, false);
 
-                    if (application.settings.showButtonLoading &&
-                        !$button.hasClass(application.settings.buttonLoadingDisabledClassName)) {
-                        $button.removeClass(application.settings.buttonLoadingClassName);
+                    if (showButtonLoading === true &&
+                        !$button.hasClass(buttonLoadingDisabledClassName)) {
+                        $button.removeClass(buttonLoadingClassName);
                         $button.removeAttr("style");
                     }
                 } else {
                     $button.attr(disabledAttrName, true);
 
-                    if (application.settings.showButtonLoading &&
-                        !$button.hasClass(application.settings.buttonLoadingDisabledClassName)) {
+                    if (showButtonLoading === true &&
+                        !$button.hasClass(buttonLoadingDisabledClassName)) {
                         $button.css({ height: $button.outerHeight(), width: $button.outerWidth() });
 
-                        $button.addClass(application.settings.buttonLoadingClassName);
+                        $button.addClass(buttonLoadingClassName);
                     }
                 }
             };
