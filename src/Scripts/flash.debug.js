@@ -617,10 +617,10 @@
                 }
 
                 var documentParentElementSelector = application.settings.documentParentElementSelector,
-                    $parentElement = template.type === self.types.PAGE &&
-                    flash.utils.object.isString(documentParentElementSelector)
-                        ? $(documentParentElementSelector)
-                        : flash.$parentElement;
+                    $parentElement =
+                        template.type === self.types.PAGE && flash.utils.object.isString(documentParentElementSelector)
+                            ? $(documentParentElementSelector)
+                            : flash.$parentElement;
 
                 flash.utils.scrollTo($parentElement, $templateContainerElement);
 
@@ -1703,19 +1703,21 @@
                         var map,
                             params = path.match(regExp);
 
-                        // Remove the static part of the hash
-                        params = params.slice(1, params.length);
+                        if (params) {
+                            // Remove the static part of the hash
+                            params = params.slice(1, params.length);
 
-                        // Get the hashmap of named parameters if they are part of the unique hash
-                        if (route.params) {
-                            map = {};
+                            // Get the hashmap of named parameters if they are part of the unique hash
+                            if (route.params) {
+                                map = {};
 
-                            for (var j = 0; j < route.params.length; j++) {
-                                if (!route.params[j] || !params[j]) {
-                                    break;
+                                for (var j = 0; j < route.params.length; j++) {
+                                    if (!route.params[j] || !params[j]) {
+                                        break;
+                                    }
+
+                                    map[route.params[j]] = params[j];
                                 }
-
-                                map[route.params[j]] = params[j];
                             }
                         }
 
@@ -2619,24 +2621,9 @@
          * Public self executing function containing the HTTP request functions
          */
         flash.http = (function () {
-            var self = {},
+            var self = {};
 
             // #region Private
-
-            // #region Objects
-
-            // #region verbs
-
-                verbs = {
-                    DELETE: "DELETE",
-                    GET: "GET",
-                    POST: "POST",
-                    PUT: "PUT"
-                };
-
-            // #endregion verbs
-
-            // #endregion Objects
 
             // #region Methods
 
@@ -2715,43 +2702,6 @@
 
             // #endregion triggerRedirect
 
-            // #region ajax
-
-            /**
-             * Create and execute an HTTP request and return the jqXHR object
-             * @param {String} verb - The HTTP Verb of the request
-             * @param {String} url - The URL to which the request is sent
-             * @param {Function} callback - The function that is executed when the request completes
-             * @param {(Object|String)} obj - A plain object or string that is sent to the server with the request
-             * @param {String} elementSelector - The form element selector
-             */
-            function ajax(verb, url, callback, obj, elementSelector) {
-                var config = { url: flash.utils.buildUrl(url), method: verb };
-
-                // Configure HTTP request based on verb
-                if (verb === verbs.DELETE || verb === verbs.GET) {
-                    config.cache = false;
-                    config.async = true;
-                }
-                else if (verb === verbs.POST || verb === verbs.PUT) {
-                    config.data = obj;
-                }
-
-                // Send and handle HTTP request
-                return $.ajax(config)
-                    .done(function (data, textStatus, jqXhr) {
-                        doneCallback(verb, data, textStatus, jqXhr, callback, elementSelector);
-                    })
-                    .fail(function (jqXhr, textStatus, errorThrown) {
-                        failCallback(verb, jqXhr, textStatus, errorThrown, callback, elementSelector);
-                    })
-                    .always(function (jqXhr, textStatus) {
-                        alwaysCallback(verb, jqXhr, textStatus, elementSelector);
-                    });
-            }
-
-            // #endregion ajax
-
             // #region doneCallback
 
             /**
@@ -2766,10 +2716,13 @@
             function doneCallback(verb, data, textStatus, jqXhr, callback, elementSelector) {
                 logAjaxStatus(textStatus, verb.toLowerCase());
 
-                if (verb === verbs.POST || verb === verbs.PUT) {
+                if (verb === self.verbs.POST || verb === self.verbs.PUT) {
                     // Reset the alerts and validation before handling the success 
                     flash.alert.reset();
-                    flash.utils.resetValidation(elementSelector);
+
+                    if (elementSelector) {
+                        flash.utils.resetValidation(elementSelector);
+                    }
                 }
 
                 if (flash.utils.object.isFunction(callback)) {
@@ -2795,10 +2748,13 @@
 
                 templating.clear();
 
-                if (verb === verbs.POST || verb === verbs.PUT) {
+                if (verb === self.verbs.POST || verb === self.verbs.PUT) {
                     // Reset the alerts and validation before handling the error 
                     flash.alert.reset();
-                    flash.utils.resetValidation(elementSelector);
+
+                    if (elementSelector) {
+                        flash.utils.resetValidation(elementSelector);
+                    }
                 }
 
                 var executeCallback = false;
@@ -2806,8 +2762,11 @@
                 // Handle the error based on the returned status code
                 if (jqXhr.status === self.statusCodes.REDIRECT) {
                     triggerRedirect(jqXhr.responseText);
-                } else if (jqXhr.status === self.statusCodes.BADREQUEST && (verb === verbs.POST || verb === verbs.PUT)) {
-                    displayFormErrors(elementSelector, jqXhr.responseText);
+                } else if (jqXhr.status === self.statusCodes.BADREQUEST &&
+                    (verb === self.verbs.POST || verb === self.verbs.PUT)) {
+                    if (elementSelector) {
+                        displayFormErrors(elementSelector, jqXhr.responseText);
+                    }
 
                     executeCallback = true;
                 } else if (jqXhr.status === self.statusCodes.UNAUTHORIZED) {
@@ -2817,7 +2776,7 @@
                         var unauthorizedRedirectPath = routing.getUnauthorizedRedirectPath();
 
                         routing.reload(unauthorizedRedirectPath);
-                    } else if (verb === verbs.POST || verb === verbs.PUT) {
+                    } else if (verb === self.verbs.POST || verb === self.verbs.PUT) {
                         flash.alert.danger(flash.resources.errorMessages.UNAUTHORIZED);
 
                         executeCallback = true;
@@ -2829,7 +2788,7 @@
                 } else if (jqXhr.status === self.statusCodes.NOTFOUND) {
                     flash.utils.displayErrorPage(flash.http.statusCodes.NOTFOUND);
                 } else {
-                    if (verb === verbs.POST || verb === verbs.PUT) {
+                    if (verb === self.verbs.POST || verb === self.verbs.PUT) {
                         flash.alert.dangerDefault();
 
                         executeCallback = true;
@@ -2838,7 +2797,7 @@
                     }
                 }
 
-                if ((verb === verbs.POST || verb === verbs.PUT) && executeCallback &&
+                if ((verb === self.verbs.POST || verb === self.verbs.PUT) && executeCallback &&
                     flash.utils.object.isFunction(callback)) {
                     callback(jqXhr);
                 }
@@ -2856,13 +2815,15 @@
              * @param {String} elementSelector - The form element selector
              */
             function alwaysCallback(verb, jqXhr, textStatus, elementSelector) {
-                if (verb === verbs.DELETE || verb === verbs.GET) {
+                if (verb === self.verbs.DELETE || verb === self.verbs.GET) {
                     return;
                 }
 
                 logAjaxStatus(textStatus, verb.toLowerCase());
 
-                if (jqXhr.status !== self.statusCodes.REDIRECT && jqXhr.status !== self.statusCodes.FORBIDDEN) {
+                if (elementSelector &&
+                    jqXhr.status !== self.statusCodes.REDIRECT &&
+                    jqXhr.status !== self.statusCodes.FORBIDDEN) {
                     flash.utils.toggleSubmitButton(elementSelector);
                 }
             }
@@ -2910,9 +2871,57 @@
 
             // #endregion statusCodes
 
+            // #region verbs
+
+            self.verbs = {
+                DELETE: "DELETE",
+                GET: "GET",
+                POST: "POST",
+                PUT: "PUT"
+            };
+
+            // #endregion verbs
+
             // #endregion Objects
 
             // #region Methods
+
+            // #region ajax
+
+            /**
+             * Create and execute an HTTP request and return the jqXHR object
+             * @param {String} verb - The HTTP Verb of the request
+             * @param {String} url - The URL to which the request is sent
+             * @param {Function} callback - The function that is executed when the request completes
+             * @param {(Object|String)} obj - A plain object or string that is sent to the server with the request
+             * @param {String} elementSelector - The form element selector
+             */
+            self.ajax = function (verb, url, callback, obj, elementSelector) {
+                var config = { url: flash.utils.buildUrl(url), method: verb };
+
+                // Configure HTTP request based on verb
+                if (verb === self.verbs.DELETE || verb === self.verbs.GET) {
+                    config.cache = false;
+                    config.async = true;
+                }
+                else if (verb === self.verbs.POST || verb === self.verbs.PUT) {
+                    config.data = obj;
+                }
+
+                // Send and handle HTTP request
+                return $.ajax(config)
+                    .done(function (data, textStatus, jqXhr) {
+                        doneCallback(verb, data, textStatus, jqXhr, callback, elementSelector);
+                    })
+                    .fail(function (jqXhr, textStatus, errorThrown) {
+                        failCallback(verb, jqXhr, textStatus, errorThrown, callback, elementSelector);
+                    })
+                    .always(function (jqXhr, textStatus) {
+                        alwaysCallback(verb, jqXhr, textStatus, elementSelector);
+                    });
+            };
+
+            // #endregion ajax
 
             // #region delete
 
@@ -2922,7 +2931,7 @@
              * @param {Function} callback - The function that is executed if the request succeeds
              */
             self.delete = function (url, callback) {
-                return ajax(verbs.DELETE, url, callback);
+                return self.ajax(self.verbs.DELETE, url, callback);
             };
 
             // #endregion delete
@@ -2936,7 +2945,7 @@
              */
             self.get = function (url, callback) {
                 // TODO: Consider adding paramter to determine if error should display on current page or display error page
-                return ajax(verbs.GET, url, callback);
+                return self.ajax(self.verbs.GET, url, callback);
             };
 
             // #endregion get
@@ -3036,7 +3045,7 @@
             self.post = function (elementSelector, url, obj, callback) {
                 flash.utils.toggleSubmitButton(elementSelector);
 
-                return ajax(verbs.POST, url, callback, obj, elementSelector);
+                return self.ajax(self.verbs.POST, url, callback, obj, elementSelector);
             };
 
             // #endregion post
@@ -3053,7 +3062,7 @@
             self.put = function (elementSelector, url, obj, callback) {
                 flash.utils.toggleSubmitButton(elementSelector);
 
-                return ajax(verbs.PUT, url, callback, obj, elementSelector);
+                return self.ajax(self.verbs.PUT, url, callback, obj, elementSelector);
             };
 
             // #endregion put
@@ -3980,7 +3989,7 @@
                     $button = $($button);
                 }
 
-                if (!$button.length) {
+                if ($button.length < 1) {
                     log.error("Button object is null or undefined.", "flash.utils.toggleButton");
 
                     return;
