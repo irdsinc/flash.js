@@ -352,8 +352,9 @@
              * Additional template manipulation after template has been loaded
              * @param {Number} type - The template type
              * @param {Object} params - The object containing the parameters
+             * @param {Function} pageCallback - The function containing addtional steps for after loading template has completed
              */
-            function runAfterLoad(type, params) {
+            function runAfterLoad(type, params, pageCallback) {
                 var afterLoad = application.settings.afterLoad;
 
                 if (flash.utils.object.isFunction(afterLoad)) {
@@ -404,6 +405,10 @@
                     });
                 }
 
+                if (flash.utils.object.isFunction(pageCallback)) {
+                    pageCallback();
+                }
+
                 if (type !== self.types.PARTIAL) {
                     self.hidePageLoading();
                 }
@@ -445,8 +450,9 @@
              * @param {String} preparedHtml - The HTML string of the template to load
              * @param {Object} params - The object containing the parameters
              * @param {Function} callback - The function containing addtional steps for loading template
+             * @param {Function} pageCallback - The function containing addtional steps for after loading template has completed
              */
-            function display(template, preparedHtml, params, callback) {
+            function display(template, preparedHtml, params, callback, pageCallback) {
                 var $templateContainerElement = $(template.containerElementSelector);
 
                 // Set the view to the prepared HTML string
@@ -468,7 +474,7 @@
                     template.callback(true);
                 }
 
-                runAfterLoad(template.type, params);
+                runAfterLoad(template.type, params, pageCallback);
             }
 
             // #endregion display
@@ -480,8 +486,9 @@
              * @param {Object} template - The template object
              * @param {String} preparedHtml - The HTML string of the template to load
              * @param {Object} params - The object containing the parameters
+             * @param {Function} pageCallback - The function containing addtional steps for after loading template has completed
              */
-            function displayModal(template, preparedHtml, params) {
+            function displayModal(template, preparedHtml, params, pageCallback) {
                 var $modal = $(preparedHtml);
 
                 // Hide the modal when an unbind event fires
@@ -514,7 +521,7 @@
                         template.callback(true);
                     }
 
-                    runAfterLoad(template.type);
+                    runAfterLoad(template.type, params, pageCallback);
 
                     // TODO: not sure if this is still required, need to check
                     //$(".modal-dialog").resize(function () { });
@@ -995,8 +1002,9 @@
              * Inject the template into the DOM and run before load manipulation to the HTML string
              * @param {String} preparedHtml - The HTML string of the template to load
              * @param {Object} params - The object containing the parameters
+             * @param {Function} pageCallback - The function containing addtional steps for after loading template has completed
              */
-            object.Template.prototype.display = function (preparedHtml, params) {
+            object.Template.prototype.display = function (preparedHtml, params, pageCallback) {
                 var template = this;
 
                 var beforeLoad = application.settings.beforeLoad;
@@ -1006,12 +1014,12 @@
                 }
 
                 if (template.type === self.types.MODAL) {
-                    displayModal(template, preparedHtml, params);
+                    displayModal(template, preparedHtml, params, pageCallback);
                 } else {
                     display(template, preparedHtml, params, template.type === self.types.PARTIAL ? null : function () {
                         self.setDocumentTitle(template.title);
                         self.setActiveTab(template.tab);
-                    });
+                    }, pageCallback);
                 }
             };
 
@@ -1031,8 +1039,8 @@
                     window[template.controller] &&
                     flash.utils.object.isFunction(window[template.controller].init)) {
                     var $templateHtml = convertHtmlStringToJqueryObject(template.html),
-                        callback = function () {
-                            template.display($templateHtml.html(), params);
+                        callback = function (pageCallback) {
+                            template.display($templateHtml.html(), params, pageCallback);
                         };
 
                     window[template.controller].init(callback, params, $templateHtml);
