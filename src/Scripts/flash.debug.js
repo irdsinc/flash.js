@@ -817,7 +817,7 @@
                 }
 
                 if (!flash.utils.object.isString(config.containerElementSelector) &&
-                    (config.type == self.types.PAGE || config.type == self.types.PARTIAL)) {
+                    (config.type === self.types.PAGE || config.type === self.types.PARTIAL)) {
                     log.error("config.containerElementSelector is not set.", "templating.load");
 
                     return;
@@ -1069,7 +1069,7 @@
                 }
 
                 // Remove the meta tag before adding a new one
-                if ($currentMetaTag && $currentMetaTag.length > 0) {
+                if ($currentMetaTag !== undefined && $currentMetaTag && $currentMetaTag.length > 0) {
                     $currentMetaTag.remove();
                 }
             };
@@ -1109,7 +1109,7 @@
                     return;
                 }
 
-                if (pageTitle && pageTitle !== "") {
+                if (pageTitle && flash.utils.object.isString(pageTitle)) {
                     if ((!application.title || application.title === "") &&
                         (!application.title.tagline || application.title.tagline === "") &&
                         (!application.title.name || application.title.name === "")) {
@@ -1152,7 +1152,7 @@
 
                             title = documentTitleFormats.main
                                 .replace("{title}", application.title.name)
-                                .replace("{tagline}", application.title.tagline)
+                                .replace("{tagline}", application.title.tagline);
                         }
                     }
                 }
@@ -1479,44 +1479,50 @@
 
             // #region Objects
 
-            // #region Match
+            // #region struct
 
-                /**
-                 * The Match object constructor
-                 * @param {String} route - The matching route
-                 * @param {Object} params - The object containing the named parameters
-                 */
-                Match = function (route, params) {
-                    this.route = route;
-                    this.params = params;
+                struct = {
+                    // #region Match
+
+                    /**
+                     * The Match object constructor
+                     * @param {String} route - The matching route
+                     * @param {Object} params - The object containing the named parameters
+                     */
+                    Match: function (route, params) {
+                        this.route = route;
+                        this.params = params;
+                    },
+
+                    // #endregion Match
+
+                    // #region Route
+
+                    /**
+                     * The Route object constructor
+                     * @param {String} hash - The unique identifier of the route
+                     * @param {Object} params - The object containing the parameters
+                     * @param {Object} config - The object containing the route config settings
+                     *      @param {Function} load - The function that is executed to load the template
+                     *      @param {Object} params - The object containing the parameters
+                     *      @param {String} path - The unique identifier of the route
+                     *      @param {Boolean} regex - Does the route contain parameters
+                     *      @param {String} title - The route title used for the document title
+                     *      @param {Function} unload - The function that is executed to unload the template
+                     */
+                    Route: function (config) {
+                        this.load = config.load;
+                        this.params = config.params;
+                        this.path = config.path;
+                        this.regex = config.regex;
+                        this.title = config.title;
+                        this.unload = config.unload;
+                    }
+
+                    // #endregion Route
                 },
 
-            // #endregion Match
-
-            // #region Route
-
-                /**
-                 * The Route object constructor
-                 * @param {String} hash - The unique identifier of the route
-                 * @param {Object} params - The object containing the parameters
-                 * @param {Object} config - The object containing the route config settings
-                 *      @param {Function} load - The function that is executed to load the template
-                 *      @param {Object} params - The object containing the parameters
-                 *      @param {String} path - The unique identifier of the route
-                 *      @param {Boolean} regex - Does the route contain parameters
-                 *      @param {String} title - The route title used for the document title
-                 *      @param {Function} unload - The function that is executed to unload the template
-                 */
-                Route = function (config) {
-                    this.load = config.load;
-                    this.params = config.params;
-                    this.path = config.path;
-                    this.regex = config.regex;
-                    this.title = config.title;
-                    this.unload = config.unload;
-                },
-
-            // #endregion Route
+            // #endregion struct
 
             // #region currentPath
 
@@ -1630,6 +1636,20 @@
 
             // #region Methods
 
+            // #region getRegexPath
+
+            /**
+             * Method to get the regex route path
+             * @param {String} path - The route identifier, must be unique
+             */
+            function getRegexPath(path) {
+                return regexStartAnchor + path.replace(regexQueryIdentifier, escapedRegexQueryIdentifier).replace(
+                    path.indexOf(regexNonNamedParameterString) >= 0 ? regexNonNamedParameters : regexNamedParameters,
+                    regexParametersMatchString);
+            }
+
+            // #endregion getRegexPath
+
             // #region get
 
             /**
@@ -1641,7 +1661,7 @@
              * @param {Boolean} regex - Does the route contain parameters
              */
             function get(path, url, title, prefix, regex) {
-                var route = new Route({
+                var route = new struct.Route({
                     path: path,
                     title: title
                 });
@@ -1688,6 +1708,43 @@
 
             // #endregion get
 
+            // #region toLowerCase
+
+            /**
+             * Lower case the route path, not incuding the querystring if it exists
+             * @param {String} path - The route path unique identifier
+             * @returns {String} The route path in lowercase
+             */
+            function toLowerCase(path) {
+                if (!path) {
+                    return null;
+                }
+
+                var caseSensitiveRoutes = application.settings.caseSensitiveRoutes;
+
+                if (flash.utils.object.isBoolean(caseSensitiveRoutes) && caseSensitiveRoutes === true) {
+                    return path;
+                }
+
+                var queryIdentifierIndex = path.indexOf(queryIdentifier),
+                    origin = queryIdentifierIndex >= 0 ? path.substr(0, queryIdentifierIndex) : path,
+                    queryString = queryIdentifierIndex >= 0 ? path.substr(queryIdentifierIndex) : "",
+                    routeParts = origin.split(routePathDivider);
+
+                for (var i = 0; i < routeParts.length; i++) {
+                    // Ignore named parameters to keep case sensitivity
+                    if (routeParts[i].indexOf(namedParameterIdentifier) >= 0) {
+                        continue;
+                    }
+
+                    routeParts[i] = routeParts[i].toLowerCase();
+                }
+
+                return routeParts.join(routePathDivider) + queryString;
+            }
+
+            // #endregion toLowerCase
+
             // #region getMatch
 
             /**
@@ -1729,9 +1786,9 @@
                             }
                         }
 
-                        return new Match(route, map || params);
+                        return new struct.Match(route, map || params);
                     } else if (path === route.path || pathLower === route.path) {
-                        return new Match(route);
+                        return new struct.Match(route);
                     }
                 }
 
@@ -1739,20 +1796,6 @@
             }
 
             // #endregion getMatch
-
-            // #region getRegexPath
-
-            /**
-             * Method to get the regex route path
-             * @param {String} path - The route identifier, must be unique
-             */
-            function getRegexPath(path) {
-                return regexStartAnchor + path.replace(regexQueryIdentifier, escapedRegexQueryIdentifier).replace(
-                    path.indexOf(regexNonNamedParameterString) >= 0 ? regexNonNamedParameters : regexNamedParameters,
-                    regexParametersMatchString);
-            }
-
-            // #endregion getRegexPath
 
             // #region load
 
@@ -1765,7 +1808,7 @@
 
                 var match = getMatch(currentPath);
 
-                if (match !== null) {
+                if (match) {
                     match.route.load(match.params, function (load) {
                         if (load !== true) {
                             return;
@@ -1801,43 +1844,6 @@
 
             // #endregion load
 
-            // #region toLowerCase
-
-            /**
-             * Lower case the route path, not incuding the querystring if it exists
-             * @param {String} path - The route path unique identifier
-             * @returns {String} The route path in lowercase
-             */
-            function toLowerCase(path) {
-                if (!path) {
-                    return null;
-                }
-
-                var caseSensitiveRoutes = application.settings.caseSensitiveRoutes;
-
-                if (flash.utils.object.isBoolean(caseSensitiveRoutes) && caseSensitiveRoutes === true) {
-                    return path;
-                }
-
-                var queryIdentifierIndex = path.indexOf(queryIdentifier),
-                    origin = queryIdentifierIndex >= 0 ? path.substr(0, queryIdentifierIndex) : path,
-                    queryString = queryIdentifierIndex >= 0 ? path.substr(queryIdentifierIndex) : "",
-                    routeParts = origin.split(routePathDivider);
-
-                for (var i = 0; i < routeParts.length; i++) {
-                    // Ignore named parameters to keep case sensitivity
-                    if (routeParts[i].indexOf(namedParameterIdentifier) >= 0) {
-                        continue;
-                    }
-
-                    routeParts[i] = routeParts[i].toLowerCase();
-                }
-
-                return routeParts.join(routePathDivider) + queryString;
-            }
-
-            // #endregion toLowerCase
-
             // #region unload
 
             /**
@@ -1846,7 +1852,7 @@
             function unload() {
                 var match = getMatch(previousPath);
 
-                if (match !== null) {
+                if (match) {
                     match.route.unload(match.params);
                 }
 
@@ -1891,13 +1897,13 @@
                 if (!flash.utils.object.isString(url)) {
                     log.error("Route url is not properly set.", "routing.add");
 
-                    return null;
+                    return;
                 }
 
                 if (!flash.utils.object.isString(prefix)) {
                     log.error("Route prefix is not properly set.", "routing.add");
 
-                    return null;
+                    return;
                 }
 
                 path = self.buildPath(path);
@@ -1965,7 +1971,7 @@
                         return hashPrefix + path.substring(1);
                     }
 
-                    return null
+                    return null;
                 }
             };
 
@@ -2071,7 +2077,7 @@
                     } else {
                         path = self.buildPath(path);
 
-                        if (window.location.hash != "" && path === window.location.hash) {
+                        if (window.location.hash !== "" && path === window.location.hash) {
                             routing.redirect(path);
                         } else {
                             window.location = self.buildPath(path);
@@ -2265,7 +2271,7 @@
                             "application.settings.templateContainerElementSelector is not properly set.",
                             "flash.$templateContainerElement");
 
-                        return;
+                        return null;
                     }
 
                     return $(templateContainerElementSelector);
@@ -3673,15 +3679,11 @@
                 }
 
                 if (self.object.isString(message)) {
-                    var path = self.object.isString(errorPath) ? errorPath : errorPath.defaultPath;
-
                     application.statusMessage = new object.StatusMessage(flash.alert.types.DANGER, message);
 
-                    routing.redirect(path);
+                    routing.redirect(self.object.isString(errorPath) ? errorPath : errorPath.defaultPath);
                 } else {
-                    var path = errorPath[message] || errorPath.defaultPath;
-
-                    routing.reload(path);
+                    routing.reload(errorPath[message] || errorPath.defaultPath);
                 }
             };
 
@@ -3723,12 +3725,14 @@
                 target = target || {};
 
                 for (var prop in source) {
-                    if (ko.isObservable(target[prop])) {
-                        target[prop](source[prop]);
-                    } else if (source[prop] && typeof source[prop] === "object") {
-                        target[prop] = extend(target[prop], source[prop]);
-                    } else {
-                        target[prop] = source[prop];
+                    if (source.hasOwnProperty(prop)) {
+                        if (ko.isObservable(target[prop])) {
+                            target[prop](source[prop]);
+                        } else if (source[prop] && typeof source[prop] === "object") {
+                            target[prop] = extend(target[prop], source[prop]);
+                        } else {
+                            target[prop] = source[prop];
+                        }
                     }
                 }
 
