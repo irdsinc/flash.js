@@ -58,7 +58,13 @@
                     buttonLoadingClassName: "btn-loading",
                     buttonLoadingDisabledClassName: "btn-loading-disabled",
                     caseSensitiveRoutes: false,
+                    disableScrollToForAlerts: false,
                     disableSpanInLabelDefaultAction: true,
+                    disabledButtonSelector: "button[disabled=disabled],\
+                        input[type=submit][disabled=disabled],\
+                        input[type=button][disabled=disabled],\
+                        input[type=reset][disabled=disabled],\
+                        a.btn[disabled=disabled]",
                     documentParentElementSelector: "html, body",
                     documentTitleFormats: {
                         main: "{title} - {tagline}",
@@ -295,16 +301,6 @@
 
             // #endregion activeClassName
 
-            // #region buttonSelector
-
-                buttonSelector = "button[disabled=disabled],\
-                    input[type=submit][disabled=disabled],\
-                    input[type=button][disabled=disabled],\
-                    input[type=reset][disabled=disabled],\
-                    a.btn[disabled=disabled]",
-
-            // #endregion buttonSelector
-
             // #region clearRequested
 
                 clearRequested = false,
@@ -365,7 +361,7 @@
                 tracking.sendGoogleAnalyticsPageView();
 
                 // Enable all disabled buttons in the current template
-                flash.$parentElement.find(buttonSelector).attr("disabled", false);
+                flash.$parentElement.find(application.settings.disabledButtonSelector).attr("disabled", false);
 
                 routing.listener();
 
@@ -453,6 +449,12 @@
              * @param {Function} pageCallback - The function containing addtional steps for after loading template has completed
              */
             function display(template, preparedHtml, params, callback, pageCallback) {
+                var beforeLoad = application.settings.beforeLoad;
+
+                if (flash.utils.object.isFunction(beforeLoad)) {
+                    beforeLoad(template.type, preparedHtml, params);
+                }
+
                 var $templateContainerElement = $(template.containerElementSelector);
 
                 // Set the view to the prepared HTML string
@@ -492,7 +494,7 @@
                 var $modal = $(preparedHtml);
 
                 // Hide the modal when an unbind event fires
-                $(document).unbind("flash.routing.unload").bind("flash.routing.unload", function () {
+                $(document).unbind("unloaded.flash.route").bind("unloaded.flash.route", function () {
                     $modal.modal("hide");
 
                     // When modal lives inside #content container, modal elements are not properly updated on hide event,
@@ -513,8 +515,13 @@
                     return;
                 }
 
-                /*$modal.on(modalShowEventName, function () {
-                });*/
+                $modal.on(modalShowEventName, function () {
+                    var beforeLoad = application.settings.beforeLoad;
+
+                    if (flash.utils.object.isFunction(beforeLoad)) {
+                        beforeLoad(template.type, preparedHtml, params);
+                    }
+                });
 
                 $modal.on(modalShownEventName, function () {
                     if (flash.utils.object.isFunction(template.callback)) {
@@ -689,7 +696,7 @@
             self.displayPageLoading = function () {
                 var showPageLoading = application.settings.showPageLoading;
 
-                // Check to make sure to page loading is active
+                // Check to make sure page loading is active
                 if (!flash.utils.object.isBoolean(showPageLoading) || showPageLoading !== true) {
                     return;
                 }
@@ -702,8 +709,12 @@
 
                 var $pageLoading = $("." + pageLoadingClassName);
 
+                $pageLoading.trigger("show.pageLoading.flash.template");
+
                 if ($pageLoading.length) {
                     $pageLoading.show();
+
+                    $pageLoading.trigger("shown.pageLoading.flash.template");
 
                     return;
                 }
@@ -717,6 +728,8 @@
 
                 // Add the page loading element to the body element
                 $body.prepend($div);
+
+                $pageLoading.trigger("shown.pageLoading.flash.template");
             };
 
             // #endregion displayPageLoading
@@ -729,7 +742,7 @@
             self.hidePageLoading = function () {
                 var showPageLoading = application.settings.showPageLoading;
 
-                // Check to make sure to page loading is active
+                // Check to make sure page loading is active
                 if (!flash.utils.object.isBoolean(showPageLoading) || showPageLoading !== true) {
                     return;
                 }
@@ -742,10 +755,14 @@
 
                 var $pageLoading = $("." + pageLoadingClassName);
 
+                $pageLoading.trigger("hide.pageLoading.flash.template");
+
                 // Hide the page loading element if it exists
                 if ($pageLoading.length) {
                     $pageLoading.hide();
                 }
+
+                $pageLoading.trigger("hidden.pageLoading.flash.template");
             };
 
             // #endregion hidePageLoading
@@ -1006,12 +1023,6 @@
              */
             object.Template.prototype.display = function (preparedHtml, params, pageCallback) {
                 var template = this;
-
-                var beforeLoad = application.settings.beforeLoad;
-
-                if (flash.utils.object.isFunction(beforeLoad)) {
-                    beforeLoad(template.type, preparedHtml, params);
-                }
 
                 if (template.type === self.types.MODAL) {
                     displayModal(template, preparedHtml, params, pageCallback);
@@ -1619,7 +1630,7 @@
                     match.route.unload(match.params);
                 }
 
-                $(document).trigger("flash.routing.unload");
+                $(document).trigger("unloaded.flash.route");
             }
 
             // #endregion unload
@@ -2158,8 +2169,12 @@
                 // Prepend the new status message
                 $targetElement.prepend($statusMessageElement);
 
-                // Scroll to the status message instantly
-                flash.utils.scrollTo($parentElement, $targetElement);
+                var disableScrollToForAlerts = application.settings.disableScrollToForAlerts;
+
+                if (!flash.utils.object.isBoolean(disableScrollToForAlerts) || disableScrollToForAlerts === false) {
+                    // Scroll to the status message instantly
+                    flash.utils.scrollTo($parentElement, $targetElement);
+                }
             }
 
             // #endregion display
@@ -2369,8 +2384,8 @@
                     // Parse the JSON response string into an object
                     var response = $.parseJSON(responseText);
 
-                    // Make sure the response is an object and contains the ModelState object with errors
-                    if (!response || !response.ModelState) {
+                    // Make sure the response is an object
+                    if (!response) {
                         flash.alert.dangerDefault();
 
                         return;
@@ -2379,6 +2394,15 @@
                     if (response.Message) {
                         // Display the error message
                         flash.alert.danger(response.Message);
+                    }
+
+                    // Make sure response contains the ModelState object with errors
+                    if (!response.ModelState) {
+                        if (!response.Message) {
+                            flash.alert.dangerDefault();
+                        }
+
+                        return;
                     }
 
                     // Run through each error in the ModelState dictionary and display a help block for each error

@@ -1,10 +1,85 @@
 ﻿.btn-loading {
-    background-image: url(images/icons/loading.gif);
-    background-origin: content-box;
-    background-position: 50% center;
-    background-repeat: no-repeat;
+    position: relative;
     overflow: hidden;
     text-indent: -9999px;
+}
+
+    .btn-loading::before {
+        content: "";
+        display: inline-block;
+        position: absolute;
+        background: transparent;
+        border: 2px solid #fff;
+        border-left-color: transparent;
+        border-bottom-color: transparent;
+        border-radius: 50%;
+        -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
+        box-sizing: border-box;
+        top: 50%;
+        left: 50%;
+        margin-top: -12px;
+        margin-left: -12px;
+        width: 24px;
+        height: 24px;
+        -moz-animation: btn-loader 1s ease-in-out infinite;
+        -o-animation: btn-loader 1s ease-in-out infinite;
+        -webkit-animation: btn-loader 1s ease-in-out infinite;
+        animation: btn-loader 1s ease-in-out infinite;
+    }
+
+@-moz-keyframes btn-loader {
+    0% {
+        -moz-transform: rotate(0) scale(1);
+        -ms-transform: rotate(0) scale(1);
+        -o-transform: rotate(0) scale(1);
+        -webkit-transform: rotate(0) scale(1);
+        transform: rotate(0) scale(1);
+    }
+
+    100% {
+        -moz-transform: rotate(360deg) scale(1);
+        -ms-transform: rotate(360deg) scale(1);
+        -o-transform: rotate(360deg) scale(1);
+        -webkit-transform: rotate(360deg) scale(1);
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+@-webkit-keyframes btn-loader {
+    0% {
+        -moz-transform: rotate(0) scale(1);
+        -ms-transform: rotate(0) scale(1);
+        -o-transform: rotate(0) scale(1);
+        -webkit-transform: rotate(0) scale(1);
+        transform: rotate(0) scale(1);
+    }
+
+    100% {
+        -moz-transform: rotate(360deg) scale(1);
+        -ms-transform: rotate(360deg) scale(1);
+        -o-transform: rotate(360deg) scale(1);
+        -webkit-transform: rotate(360deg) scale(1);
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+@keyframes btn-loader {
+    0% {
+        -moz-transform: rotate(0) scale(1);
+        -ms-transform: rotate(0) scale(1);
+        -o-transform: rotate(0) scale(1);
+        -webkit-transform: rotate(0) scale(1);
+        transform: rotate(0) scale(1);
+    }
+
+    100% {
+        -moz-transform: rotate(360deg) scale(1);
+        -ms-transform: rotate(360deg) scale(1);
+        -o-transform: rotate(360deg) scale(1);
+        -webkit-transform: rotate(360deg) scale(1);
+        transform: rotate(360deg) scale(1);
+    }
 }
 
 .page-loading {
