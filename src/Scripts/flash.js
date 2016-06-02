@@ -365,8 +365,20 @@
 
                 routing.listener();
 
+                var anchorExclusionRoutingSelector = application.settings.anchorExclusionRoutingSelector;
+
+                if (!flash.utils.object.isString(anchorExclusionRoutingSelector)) {
+                    log.error(
+                        "application.settings.anchorExclusionRoutingSelector is not properly set.",
+                        "templating.runAfterLoad");
+
+                    return;
+                }
+
+                var anchorSelector = "a.btn:not(" + anchorExclusionRoutingSelector + ")";
+
                 // Bind click event to any link buttons to allow for toggling and loading animation
-                flash.$parentElement.find("a.btn").click(function () {
+                flash.$parentElement.find(anchorSelector).click(function () {
                     var $button = $(this);
 
                     flash.utils.toggleButton($button);
@@ -660,6 +672,23 @@
 
             // #region Methods
 
+            // #region addLinkTag
+
+            /**
+             * Add/update a link tag
+             * @param {Object} attr - The link tag attributes
+             */
+            self.addLinkTag = function (attr) {
+                self.removeLinkTag(attr);
+
+                // Create and add the new link tag
+                var $linkTag = $("<link/>").attr(attr);
+
+                $("title").before($linkTag);
+            };
+
+            // #endregion addLinkTag
+
             // #region addMetaTag
 
             /**
@@ -850,6 +879,24 @@
             };
 
             // #endregion loadPartial
+
+            // #region removeLinkTag
+
+            /**
+             * Remove a link tag
+             * @param {Object} attr - The link tag attributes
+             */
+            self.removeLinkTag = function (attr) {
+                // Check if the link tag exists using the rel
+                var $currentLinkTag = $("link[rel='" + attr.rel + "']");
+
+                // Remove the link before adding a new one
+                if ($currentLinkTag && $currentLinkTag.length > 0) {
+                    $currentLinkTag.remove();
+                }
+            };
+
+            // #endregion removeLinkTag
 
             // #region removeMetaTag
 
@@ -1610,6 +1657,7 @@
                         templating.addMetaTag({ property: "og:title", content: document.title });
                         templating.addMetaTag({ property: "og:type", content: type });
                         templating.addMetaTag({ property: "og:url", content: window.location.href });
+                        templating.addLinkTag({ rel: "canonical", href: window.location.href });
                     });
                 } else {
                     flash.utils.displayErrorPage(flash.http.statusCodes.NOTFOUND);
@@ -2898,6 +2946,16 @@
 
             // #region Methods
 
+            // #region addLinkTag
+
+            /**
+             * Add/update a link tag
+             * @param {Object} attr - The link tag attributes
+             */
+            self.addLinkTag = templating.addLinkTag;
+
+            // #endregion addLinkTag
+
             // #region addMetaTag
 
             /**
@@ -2995,10 +3053,20 @@
 
             // #endregion loadPartial
 
+            // #region removeLinkTag
+
+            /**
+             * Remove a link tag
+             * @param {Object} attr - The link tag attributes
+             */
+            self.removeLinkTag = templating.removeLinkTag;
+
+            // #endregion removeLinkTag
+
             // #region removeMetaTag
 
             /**
-             * Add/update a meta tag
+             * Remove a meta tag
              * @param {Object} attr - The meta tag attributes
              */
             self.removeMetaTag = templating.removeMetaTag;
