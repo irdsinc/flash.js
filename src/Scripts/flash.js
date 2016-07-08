@@ -37,7 +37,7 @@
                         DEFAULT: "An unknown error occured. Please go back and try again.",
                         FORBIDDEN: "You do not have permission to view this directory or page.",
                         NOTFOUND: "The page cannot be found.",
-                        UNAUTHORIZED: "Your session has expired. Please <a href=\"{0}\">Sign In</a> to continue."
+                        UNAUTHORIZED: "Your session has expired. Please <a href=\"{0}\" class=\"alert-link\">Sign In</a> to continue."
                     }
                 },
                 settings: {
@@ -65,6 +65,7 @@
                         input[type=button][disabled=disabled],\
                         input[type=reset][disabled=disabled],\
                         a.btn[disabled=disabled]",
+                    dismissibleAlerts: false,
                     documentParentElementSelector: "html, body",
                     documentTitleFormats: {
                         main: "{title} - {tagline}",
@@ -1874,10 +1875,12 @@
                 $(document).off("click.flash", anchorSelector).on("click.flash", anchorSelector, function (e) {
                     e.preventDefault();
 
-                    var path = $(this).attr("href");
+                    var $this = $(this),
+                        path = $this.attr("href");
 
                     if (flash.utils.object.isBoolean(self.html5Mode) && self.html5Mode === true) {
                         unload();
+
                         load(path);
                     } else {
                         path = self.buildPath(path);
@@ -1888,6 +1891,8 @@
                             window.location = self.buildPath(path);
                         }
                     }
+
+                    $this.blur();
                 });
             };
 
@@ -2237,11 +2242,23 @@
              * @param {String} targetElementSelector - The jQuery target selector used to find the HTML element within the parent DOM object to attach the alert to
              */
             function create(type, message, parentElementSelector, targetElementSelector) {
+                var dismissibleAlerts = application.settings.dismissibleAlerts;
                 // Create the jQuery html object for the alert
                 var $statusMessageElement = $("<div/>", {
-                    "class": "alert alert-" + type,
+                    "class": "alert alert-" +
+                        type +
+                        (flash.utils.object.isBoolean(dismissibleAlerts) && dismissibleAlerts
+                            ? " alert-dismissible"
+                            : ""),
                     "role": "alert"
-                }).html(message);
+                });
+
+                // Check whether to display the dismissable button
+                if (flash.utils.object.isBoolean(dismissibleAlerts) && dismissibleAlerts) {
+                    message = "<button type=\"button\" class=\"close\" data-dismiss=\"alert\" aria-label=\"Close\"><span aria-hidden=\"true\">&times;</span></button>" + message;
+                }
+
+                $statusMessageElement.html(message);
 
                 // Display the alert
                 display($statusMessageElement, parentElementSelector, targetElementSelector);
