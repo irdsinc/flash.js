@@ -2789,7 +2789,7 @@
             self.getImage = function (src, callback) {
                 $("<img/>", {
                     src: flash.utils.buildUrl(src)
-                }).load(function () {
+                }).on("load", function () {
                     if (flash.utils.object.isFunction(callback)) {
                         callback();
                     }
