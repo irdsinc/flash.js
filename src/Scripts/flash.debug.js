@@ -395,7 +395,7 @@
              */
             self.bind = function (method) {
                 if (flash.utils.object.isFunction(method)) {
-                    $(window).unbind("hashchange.flash").bind("hashchange.flash", method);
+                    $(window).off("hashchange.flash").on("hashchange.flash", method);
                 }
             };
 
@@ -429,7 +429,7 @@
              */
             self.bind = function (method) {
                 if (flash.utils.object.isFunction(method)) {
-                    $(window).unbind("popstate.flash").bind("popstate.flash", method);
+                    $(window).off("popstate.flash").on("popstate.flash", method);
                 }
             };
 
@@ -667,7 +667,7 @@
                 var $modal = $(preparedHtml);
 
                 // Hide the modal when an unbind event fires
-                $(document).unbind("unloaded.flash.route").bind("unloaded.flash.route", function () {
+                $(document).off("unloaded.flash.route").on("unloaded.flash.route", function () {
                     $modal.modal("hide");
 
                     // When modal lives inside #content container, modal elements are not properly updated on hide event,
@@ -2731,7 +2731,7 @@
             function displayFormErrors(elementSelector, responseText) {
                 try {
                     // Parse the JSON response string into an object
-                    var response = $.parseJSON(responseText);
+                    var response = JSON.parse(responseText);
 
                     // Make sure the response is an object
                     if (!response) {
@@ -2785,7 +2785,7 @@
             function triggerRedirect(responseText) {
                 try {
                     // Parse the JSON response string into an object
-                    var response = $.parseJSON(responseText);
+                    var response = JSON.parse(responseText);
 
                     // Make sure the response is an object and contains the Path string
                     if (response && response.Path) {
