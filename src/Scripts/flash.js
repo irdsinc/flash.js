@@ -379,10 +379,12 @@
                 var anchorSelector = "a.btn:not(" + anchorExclusionRoutingSelector + ")";
 
                 // Bind click event to any link buttons to allow for toggling and loading animation
-                flash.$parentElement.find(anchorSelector).click(function () {
-                    var $button = $(this);
+                flash.$parentElement.find(anchorSelector).each(function () {
+                    $(this).click(function () {
+                        var $button = $(this);
 
-                    flash.utils.toggleButton($button);
+                        flash.utils.toggleButton($button);
+                    });
                 });
 
                 var mobilePositionFixedElementSelector = application.settings.mobilePositionFixedElementSelector;
@@ -407,10 +409,12 @@
                 // Bind click event to labels containing span elements to disable default selection of checkbox, if
                 // checkbox is present
                 if (flash.utils.object.isBoolean(disableSpanInLabelDefaultAction) && disableSpanInLabelDefaultAction === true) {
-                    flash.$parentElement.find("label").has("span").click(function (e) {
-                        if (e.target.nodeName === "SPAN") {
-                            e.preventDefault();
-                        }
+                    flash.$parentElement.find("label").has("span").each(function () {
+                        $(this).click(function (e) {
+                            if (e.target.nodeName === "SPAN") {
+                                e.preventDefault();
+                            }
+                        });
                     });
                 }
 
