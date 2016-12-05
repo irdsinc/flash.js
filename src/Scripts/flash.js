@@ -1350,12 +1350,6 @@
 
             // #endregion struct
 
-            // #region currentPath
-
-                currentPath = null,
-
-            // #endregion currentPath
-
             // #region escapedRegexQueryIdentifier
 
                 escapedRegexQueryIdentifier = "\\?",
@@ -1630,9 +1624,9 @@
              * @param {String} path - The requested route path
              */
             function load(path) {
-                currentPath = self.buildPath(path);
+                self.currentPath = self.buildPath(path);
 
-                var match = getMatch(currentPath);
+                var match = getMatch(self.currentPath);
 
                 if (match) {
                     match.route.load(match.params, function (load) {
@@ -1641,8 +1635,8 @@
                         }
 
                         var type = flash.utils.object.isBoolean(self.html5Mode)
-                            ? (self.html5Mode === true && currentPath === routePathDivider) ||
-                            (self.html5Mode === false && currentPath === hashPrefix)
+                            ? (self.html5Mode === true && self.currentPath === routePathDivider) ||
+                            (self.html5Mode === false && self.currentPath === hashPrefix)
                                 ? "website"
                                 : "article"
                             : null;
@@ -1650,14 +1644,14 @@
                         if (flash.utils.object.isBoolean(self.html5Mode) && self.html5Mode === true) {
                             if (popstateCallback === true) {
                                 popstateCallback = false;
-                            } else if (!previousPath || previousPath === currentPath) {
-                                history.replaceState({ path: currentPath }, match.route.title, currentPath);
+                            } else if (!previousPath || previousPath === self.currentPath) {
+                                history.replaceState({ path: self.currentPath }, match.route.title, self.currentPath);
                             } else {
-                                history.pushState({ path: currentPath }, match.route.title, currentPath);
+                                history.pushState({ path: self.currentPath }, match.route.title, self.currentPath);
                             }
                         }
 
-                        previousPath = currentPath;
+                        previousPath = self.currentPath;
 
                         templating.addMetaTag({ property: "og:title", content: document.title });
                         templating.addMetaTag({ property: "og:type", content: type });
@@ -1695,6 +1689,15 @@
             // #region Public
 
             // #region Objects
+
+            // #region currentPath
+
+            /**
+             * @returns {String} the current route path
+             */
+            self.currentPath = null;
+
+            // #endregion currentPath
 
             // #region html5Mode
 
@@ -2561,6 +2564,10 @@
              * @param {String} elementSelector - The form element selector
              */
             function failCallback(verb, jqXhr, textStatus, errorThrown, callback, elementSelector) {
+                if (jqXhr.status === self.statusCodes.ABORT || jqXhr.readyState === self.statusCodes.ABORT) {
+                    return;
+                }
+
                 templating.clear();
 
                 if (verb === self.verbs.POST || verb === self.verbs.PUT) {
@@ -2654,6 +2661,7 @@
             // #region statusCodes
 
             self.statusCodes = {
+                ABORT: 0,
                 BADREQUEST: 400,
                 FORBIDDEN: 403,
                 NOTFOUND: 404,
@@ -2876,6 +2884,19 @@
             // #region Objects
 
             Object.defineProperties(self, {
+                // #region currentPath
+
+                /**
+                 * @returns {String} the current route path
+                 */
+                currentPath: {
+                    get: function () {
+                        return routing.currentPath;
+                    }
+                },
+
+                // #endregion currentPath
+
                 // #region html5Mode
 
                 /**
