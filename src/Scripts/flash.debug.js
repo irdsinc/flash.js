@@ -801,69 +801,6 @@
 
             // #endregion isResourceLoaded
 
-            // #region load
-
-            /**
-             * Load the template for the supplied hash from client browser session or request new template
-             * @param {Object} config - The object containing the template config settings
-             *      @param {Function} callback - The function that is executed when the template is loaded
-             *      @param {String} containerElementSelector - The container element selector used to prepend the template to
-             *      @param {String} hash - The unique identifier of the template
-             *      @param {Object} params - The object containing the parameters
-             *      @param {String} prefix - The prefix used for the controller and tab objects
-             *      @param {String} title - The template title used for the document title
-             *      @param {Number} type - The template type
-             *      @param {String} url - The url of the view (html) to load
-             */
-            function load(config) {
-                if (!flash.utils.object.isObject(config)) {
-                    log.error("config is not set.", "templating.load");
-
-                    return;
-                }
-
-                if (!flash.utils.object.isNumber(config.type)) {
-                    log.error("config.type is not set.", "templating.load");
-
-                    return;
-                }
-
-                if (!flash.utils.object.isString(config.hash)) {
-                    log.error("config.hash is not set.", "templating.load");
-
-                    return;
-                }
-
-                if (!flash.utils.object.isString(config.url)) {
-                    log.error("config.url is not set.", "templating.load");
-
-                    return;
-                }
-
-                if (!flash.utils.object.isString(config.containerElementSelector) &&
-                    (config.type === self.types.PAGE || config.type === self.types.PARTIAL)) {
-                    log.error("config.containerElementSelector is not set.", "templating.load");
-
-                    return;
-                }
-
-                log.info(config.hash, "templating.load");
-
-                var template = get(config.hash);
-
-                if (template) {
-                    template.init(config.params);
-                } else {
-                    log.info("new " + config.hash, "templating.load");
-
-                    template = new object.Template(config);
-
-                    template.request(config.url, config.params);
-                }
-            }
-
-            // #endregion load
-
             // #endregion Methods
 
             // #endregion Private
@@ -1014,6 +951,69 @@
 
             // #endregion hidePageLoading
 
+            // #region load
+
+            /**
+             * Load the template for the supplied hash from client browser session or request new template
+             * @param {Object} config - The object containing the template config settings
+             *      @param {Function} callback - The function that is executed when the template is loaded
+             *      @param {String} containerElementSelector - The container element selector used to prepend the template to
+             *      @param {String} hash - The unique identifier of the template
+             *      @param {Object} params - The object containing the parameters
+             *      @param {String} prefix - The prefix used for the controller and tab objects
+             *      @param {String} title - The template title used for the document title
+             *      @param {Number} type - The template type
+             *      @param {String} url - The url of the view (html) to load
+             */
+            self.load = function (config) {
+                if (!flash.utils.object.isObject(config)) {
+                    log.error("config is not set.", "templating.load");
+
+                    return;
+                }
+
+                if (!flash.utils.object.isNumber(config.type)) {
+                    log.error("config.type is not set.", "templating.load");
+
+                    return;
+                }
+
+                if (!flash.utils.object.isString(config.hash)) {
+                    log.error("config.hash is not set.", "templating.load");
+
+                    return;
+                }
+
+                if (!flash.utils.object.isString(config.url)) {
+                    log.error("config.url is not set.", "templating.load");
+
+                    return;
+                }
+
+                if (!flash.utils.object.isString(config.containerElementSelector) &&
+                    (config.type === self.types.PAGE || config.type === self.types.PARTIAL)) {
+                    log.error("config.containerElementSelector is not set.", "templating.load");
+
+                    return;
+                }
+
+                log.info(config.hash, "templating.load");
+
+                var template = get(config.hash);
+
+                if (template) {
+                    template.init(config.params);
+                } else {
+                    log.info("new " + config.hash, "templating.load");
+
+                    template = new object.Template(config);
+
+                    template.request(config.url, config.params);
+                }
+            };
+
+            // #endregion load
+
             // #region loadModal
 
             /**
@@ -1036,7 +1036,7 @@
                     url: url
                 };
 
-                load(config);
+                self.load(config);
             };
 
             // #endregion loadModal
@@ -1074,7 +1074,7 @@
                     url: url
                 };
 
-                load(config);
+                self.load(config);
             };
 
             // #endregion loadPage
@@ -1097,7 +1097,7 @@
                     url: url
                 };
 
-                load(config);
+                self.load(config);
             };
 
             // #endregion loadPartial
@@ -3863,7 +3863,7 @@
                         if (ko.isObservable(target[prop])) {
                             target[prop](source[prop]);
                         } else if (source[prop] && typeof source[prop] === "object") {
-                            target[prop] = extend(target[prop], source[prop]);
+                            target[prop] = self.extend(target[prop], source[prop]);
                         } else {
                             target[prop] = source[prop];
                         }
